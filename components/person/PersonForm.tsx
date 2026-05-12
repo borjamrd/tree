@@ -2,11 +2,10 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from '@/i18n/navigation'
-import { useTransition, useState } from 'react'
+import { useTransition } from 'react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { personSchema, type PersonInput } from '@/lib/validations'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -27,7 +26,6 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
   const tCommon = useTranslations('common')
   const router = useRouter()
   const [pending, startTransition] = useTransition()
-  const [focusedField, setFocusedField] = useState<string | null>(null)
 
   const form = useForm<PersonInput>({
     resolver: zodResolver(personSchema),
@@ -55,10 +53,10 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
 
   const SectionTitle = ({ icon: Icon, title }: { icon: any, title: string }) => (
     <div className="flex items-center gap-2 mb-6 mt-8 first:mt-0">
-      <div className="w-8 h-8 rounded-lg bg-stone-50 flex items-center justify-center text-stone-400 group-focus-within:text-stone-900 transition-colors">
+      <div className="w-8 h-8 rounded-lg bg-stone-50 flex items-center justify-center text-stone-400 group-focus-within/section:text-stone-900 transition-colors">
         <Icon className="w-4 h-4" />
       </div>
-      <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-400">{title}</h3>
+      <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-400 group-focus-within/section:text-stone-600 transition-colors">{title}</h3>
     </div>
   )
 
@@ -66,20 +64,14 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
     <div className={cn("space-y-2 group/field", className)}>
       <Label 
         htmlFor={id} 
-        className={cn(
-          "text-[11px] font-semibold uppercase tracking-wider transition-colors duration-300",
-          focusedField === id ? "text-stone-900" : "text-stone-500"
-        )}
+        className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 group-focus-within/field:text-stone-900 transition-colors duration-300"
       >
         {label}
       </Label>
       <div className="relative">
         {children}
         <div 
-          className={cn(
-            "absolute bottom-0 left-0 h-[2px] bg-stone-900 transition-all duration-500 ease-out",
-            focusedField === id ? "w-full" : "w-0"
-          )} 
+          className="absolute bottom-0 left-0 h-[2px] bg-stone-900 w-0 group-focus-within/field:w-full transition-all duration-500 ease-out" 
         />
       </div>
       {error && <p className="text-[10px] font-medium text-red-500 mt-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
@@ -89,7 +81,7 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
       {/* Identity Section */}
-      <section>
+      <section className="group/section">
         <SectionTitle icon={User} title="Identity" />
         <div className="space-y-6">
           <InputWrapper label={t('firstName')} id="firstName" error={errors.firstName?.message}>
@@ -97,8 +89,6 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
               id="firstName" 
               {...register('firstName')} 
               className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 text-lg font-display placeholder:text-stone-200 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
-              onFocus={() => setFocusedField('firstName')}
-              onBlur={() => setFocusedField(null)}
               placeholder="e.g. Eleanor"
             />
           </InputWrapper>
@@ -109,8 +99,6 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
                 id="lastName" 
                 {...register('lastName')} 
                 className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 placeholder:text-stone-200 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
-                onFocus={() => setFocusedField('lastName')}
-                onBlur={() => setFocusedField(null)}
                 placeholder="Primary surname"
               />
             </InputWrapper>
@@ -119,8 +107,6 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
                 id="lastName2" 
                 {...register('lastName2')} 
                 className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 placeholder:text-stone-200 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
-                onFocus={() => setFocusedField('lastName2')}
-                onBlur={() => setFocusedField(null)}
                 placeholder="Secondary surname"
               />
             </InputWrapper>
@@ -132,8 +118,6 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
                 id="gender"
                 {...register('gender')}
                 className="appearance-none w-full bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 text-sm focus:outline-none focus:border-stone-900 transition-all cursor-pointer"
-                onFocus={() => setFocusedField('gender')}
-                onBlur={() => setFocusedField(null)}
               >
                 <option value="unknown">{t('genderUnknown')}</option>
                 <option value="male">{t('genderMale')}</option>
@@ -149,7 +133,7 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
       </section>
 
       {/* Life Timeline Section */}
-      <section>
+      <section className="group/section">
         <SectionTitle icon={Calendar} title="Life Timeline" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
           <InputWrapper label={t('birthDate')} id="birthDate">
@@ -158,8 +142,6 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
               type="date" 
               {...register('birthDate')} 
               className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
-              onFocus={() => setFocusedField('birthDate')}
-              onBlur={() => setFocusedField(null)}
             />
           </InputWrapper>
           <InputWrapper label={t('birthPlace')} id="birthPlace">
@@ -168,8 +150,6 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
                 id="birthPlace" 
                 {...register('birthPlace')} 
                 className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 pl-6 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
-                onFocus={() => setFocusedField('birthPlace')}
-                onBlur={() => setFocusedField(null)}
                 placeholder="City, Country"
               />
               <MapPin className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-300" />
@@ -182,8 +162,6 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
               type="date" 
               {...register('deathDate')} 
               className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 focus-visible:ring-0 focus-visible:border-stone-900 transition-all opacity-70 focus:opacity-100 transition-opacity"
-              onFocus={() => setFocusedField('deathDate')}
-              onBlur={() => setFocusedField(null)}
             />
           </InputWrapper>
           <InputWrapper label={t('deathPlace')} id="deathPlace">
@@ -192,8 +170,6 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
                 id="deathPlace" 
                 {...register('deathPlace')} 
                 className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 pl-6 focus-visible:ring-0 focus-visible:border-stone-900 transition-all opacity-70 focus:opacity-100 transition-opacity"
-                onFocus={() => setFocusedField('deathPlace')}
-                onBlur={() => setFocusedField(null)}
                 placeholder="Resting place"
               />
               <MapPin className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-300" />
@@ -203,7 +179,7 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
       </section>
 
       {/* Media & Narrative Section */}
-      <section>
+      <section className="group/section">
         <SectionTitle icon={AlignLeft} title="Media & Narrative" />
         <div className="space-y-8">
           <InputWrapper label={t('photoUrl')} id="photoUrl" error={errors.photoUrl?.message}>
@@ -214,8 +190,6 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
                 placeholder={t('photoUrlPlaceholder')} 
                 {...register('photoUrl')} 
                 className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 pl-6 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
-                onFocus={() => setFocusedField('photoUrl')}
-                onBlur={() => setFocusedField(null)}
               />
               <Camera className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-300" />
             </div>
@@ -227,8 +201,6 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
               rows={4} 
               {...register('bio')} 
               className="bg-stone-50/50 border-0 border-stone-100 rounded-2xl p-4 text-sm focus-visible:ring-2 focus-visible:ring-stone-900/5 transition-all resize-none italic"
-              onFocus={() => setFocusedField('bio')}
-              onBlur={() => setFocusedField(null)}
               placeholder="Capture the essence of their story..."
             />
           </InputWrapper>
