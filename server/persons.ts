@@ -13,7 +13,7 @@ function sanitize(input: PersonInput) {
   return {
     ...input,
     lastName: nullIfEmpty(input.lastName),
-    maidenName: nullIfEmpty(input.maidenName),
+    lastName2: nullIfEmpty(input.lastName2),
     birthDate: nullIfEmpty(input.birthDate),
     birthPlace: nullIfEmpty(input.birthPlace),
     deathDate: nullIfEmpty(input.deathDate),

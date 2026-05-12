@@ -44,6 +44,7 @@ export default async function EditPersonPage({
         defaultValues={{
           firstName: person.firstName,
           lastName: person.lastName ?? undefined,
+          lastName2: person.lastName2 ?? undefined,
           gender: person.gender,
           birthDate: person.birthDate ?? undefined,
           birthPlace: person.birthPlace ?? undefined,

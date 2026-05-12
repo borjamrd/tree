@@ -8,7 +8,7 @@ type Person = {
   id: string
   firstName: string
   lastName?: string | null
-  maidenName?: string | null
+  lastName2?: string | null
   birthDate?: string | null
   birthPlace?: string | null
   deathDate?: string | null
@@ -36,7 +36,7 @@ export function PersonCard({ person }: { person: Person }) {
     a.click()
   }
 
-  const fullName = [person.firstName, person.maidenName ? `(${person.maidenName})` : null, person.lastName]
+  const fullName = [person.firstName, person.lastName, person.lastName2]
     .filter(Boolean).join(' ')
 
   return (

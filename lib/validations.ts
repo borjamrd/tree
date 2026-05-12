@@ -8,7 +8,7 @@ export const treeSchema = z.object({
 export const personSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().max(100).optional(),
-  maidenName: z.string().max(100).optional(),
+  lastName2: z.string().max(100).optional(),
   gender: z.enum(['male', 'female', 'other', 'unknown']).optional(),
   birthDate: z.string().optional(),
   birthPlace: z.string().max(200).optional(),

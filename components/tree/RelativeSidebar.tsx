@@ -109,9 +109,15 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
             {errors.firstName && <p className="text-xs text-red-500">{errors.firstName.message}</p>}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="r-lastName">Last name</Label>
-            <Input id="r-lastName" {...register('lastName')} placeholder="Last name" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="r-lastName">Primer apellido</Label>
+              <Input id="r-lastName" {...register('lastName')} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="r-lastName2">Segundo apellido</Label>
+              <Input id="r-lastName2" {...register('lastName2')} />
+            </div>
           </div>
 
           <div className="space-y-1.5">

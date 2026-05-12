@@ -33,7 +33,7 @@ export default async function PersonDetailPage({
 
       <div className="flex items-start justify-between mb-6">
         <h1 className="text-xl font-semibold text-stone-800">
-          {person.firstName} {person.lastName}
+          {[person.firstName, person.lastName, person.lastName2].filter(Boolean).join(' ')}
         </h1>
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/trees/${treeId}/persons/${personId}/edit`}>

@@ -67,7 +67,7 @@ export const persons = pgTable('persons', {
   treeId: uuid('tree_id').notNull().references(() => trees.id, { onDelete: 'cascade' }),
   firstName: text('first_name').notNull(),
   lastName: text('last_name'),
-  maidenName: text('maiden_name'),
+  lastName2: text('last_name_2'),
   gender: genderEnum('gender').default('unknown').notNull(),
   birthDate: date('birth_date'),
   birthPlace: text('birth_place'),

@@ -49,15 +49,20 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <div className="space-y-1.5">
+        <Label htmlFor="firstName">Nombre *</Label>
+        <Input id="firstName" {...register('firstName')} />
+        {errors.firstName && <p className="text-xs text-red-500">{errors.firstName.message}</p>}
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="firstName">First name *</Label>
-          <Input id="firstName" {...register('firstName')} />
-          {errors.firstName && <p className="text-xs text-red-500">{errors.firstName.message}</p>}
+          <Label htmlFor="lastName">Primer apellido</Label>
+          <Input id="lastName" {...register('lastName')} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="lastName">Last name</Label>
-          <Input id="lastName" {...register('lastName')} />
+          <Label htmlFor="lastName2">Segundo apellido</Label>
+          <Input id="lastName2" {...register('lastName2')} />
         </div>
       </div>
 

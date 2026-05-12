@@ -9,6 +9,7 @@ type PersonData = {
   treeId: string
   firstName: string
   lastName?: string | null
+  lastName2?: string | null
   birthDate?: string | null
   deathDate?: string | null
   photoUrl?: string | null
@@ -43,7 +44,7 @@ export function PersonNode({ data, positionAbsoluteX, positionAbsoluteY }: NodeP
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-sm font-medium text-center text-stone-800 truncate hover:underline">
-          {d.firstName} {d.lastName}
+          {[d.firstName, d.lastName, d.lastName2].filter(Boolean).join(' ')}
         </p>
         {d.birthDate && (
           <p className="text-xs text-stone-400 text-center mt-0.5">
