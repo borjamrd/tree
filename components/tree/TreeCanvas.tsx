@@ -16,11 +16,14 @@ import {
 import '@xyflow/react/dist/style.css'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
+import { UserPlus } from 'lucide-react'
 import { PersonNode } from './PersonNode'
 import { UnionNode } from './UnionNode'
 import { DeletableEdge } from './DeletableEdge'
 import { RelativeSidebar } from './RelativeSidebar'
 import { PersonDetailSidebar, type PersonDetail, type KinshipData } from './PersonDetailSidebar'
+import { AddPersonSidebar } from './AddPersonSidebar'
 import { treeToFlow } from '@/lib/tree-transform'
 import { updatePersonPosition, setPersonAsSelf } from '@/server/persons'
 import { linkPersons, addExistingChild, addChild, deleteUnion, removeChild, updateUnionPosition } from '@/server/relationships'
@@ -101,6 +104,8 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
   const [sidebar, setSidebar] = useState<SidebarState>(null)
   const [personDetail, setPersonDetail] = useState<PersonDetail | null>(null)
   const [personKinship, setPersonKinship] = useState<KinshipData | null>(null)
+  const [showAddPerson, setShowAddPerson] = useState(false)
+  const t = useTranslations('treePage')
 
   const { nodes: initialNodes, edges: initialEdges } = treeToFlow(persons, unions, parentage)
   const [nodes, setNodes] = useNodesState(initialNodes)
@@ -259,10 +264,10 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
       </ReactFlow>
 
       {/* Transparent backdrop — closes any open sidebar on outside click */}
-      {(personDetail ?? sidebar) && (
+      {(personDetail ?? sidebar ?? (showAddPerson || null)) && (
         <div
           className="absolute inset-0 z-[9]"
-          onClick={() => { setPersonDetail(null); setPersonKinship(null); setSidebar(null) }}
+          onClick={() => { setPersonDetail(null); setPersonKinship(null); setSidebar(null); setShowAddPerson(false) }}
         />
       )}
 
@@ -300,6 +305,42 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
             router.refresh()
           }}
         />
+      )}
+
+      {showAddPerson && (
+        <AddPersonSidebar
+          treeId={treeId}
+          onClose={() => setShowAddPerson(false)}
+        />
+      )}
+
+      {/* Add Person button — floats in the top-right of the canvas */}
+      {!showAddPerson && !personDetail && !sidebar && (
+        <button
+          onClick={() => setShowAddPerson(true)}
+          className="absolute top-4 right-4 z-20 group flex items-center gap-2 px-5 py-2.5 transition-all duration-150"
+          style={{
+            border: '1px solid var(--rule)',
+            background: 'var(--parchment)',
+            color: 'var(--sepia)',
+            fontFamily: 'var(--font-body)',
+            fontSize: '10px',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            boxShadow: '0 2px 8px rgba(28,21,16,0.06)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--ink)'
+            e.currentTarget.style.color = 'var(--ink)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--rule)'
+            e.currentTarget.style.color = 'var(--sepia)'
+          }}
+        >
+          <UserPlus className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+          <span>{t('addPerson')}</span>
+        </button>
       )}
     </div>
   )

@@ -51,7 +51,8 @@
     "successToast": "El linaje ha sido eliminado"
   },
   "treePage": {
-    "addPerson": "Añadir persona"
+    "addPerson": "Añadir persona",
+    "newMember": "Nuevo Miembro"
   },
   "personForm": {
     "firstName": "Nombre *",
