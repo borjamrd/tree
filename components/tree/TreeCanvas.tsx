@@ -151,8 +151,14 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
         }
         router.refresh()
       } else if (isSourceUnion && !isTargetUnion) {
+        // Union → person: add person as child of this union
         const unionId = source.replace('union-', '')
         await addChild(unionId, target)
+        router.refresh()
+      } else if (!isSourceUnion && isTargetUnion) {
+        // Person → union: add person as child of this union (drag from top handle)
+        const unionId = target.replace('union-', '')
+        await addChild(unionId, source)
         router.refresh()
       }
     })
