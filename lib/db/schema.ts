@@ -1,7 +1,8 @@
 import {
   pgTable, uuid, text, boolean, date, timestamp,
-  pgEnum, index, unique, integer
+  pgEnum, index, unique, integer, uniqueIndex
 } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 import { relations } from 'drizzle-orm'
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
@@ -74,12 +75,16 @@ export const persons = pgTable('persons', {
   deathDate: date('death_date'),
   deathPlace: text('death_place'),
   isAlive: boolean('is_alive').default(true).notNull(),
+  isSelf: boolean('is_self').default(false).notNull(),
   photoUrl: text('photo_url'),
   bio: text('bio'),
   posX: text('pos_x').default('0'),
   posY: text('pos_y').default('0'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (t) => [index('persons_tree_idx').on(t.treeId)])
+}, (t) => [
+  index('persons_tree_idx').on(t.treeId),
+  uniqueIndex('persons_one_self_per_tree').on(t.treeId).where(sql`${t.isSelf} = true`),
+])
 
 // ─── Unions ──────────────────────────────────────────────────────────────────
 
