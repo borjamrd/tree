@@ -18,8 +18,22 @@ export type PersonDetail = {
   bio?: string | null
 }
 
+export type KinshipPerson = {
+  id: string
+  firstName: string
+  lastName?: string | null
+  lastName2?: string | null
+}
+
+export type KinshipData = {
+  parents: KinshipPerson[]
+  partners: KinshipPerson[]
+  children: KinshipPerson[]
+}
+
 type Props = {
   person: PersonDetail
+  kinship?: KinshipData
   onClose: () => void
   onAddRelative: () => void
 }
@@ -55,7 +69,17 @@ function formatDate(iso?: string | null) {
   return d ? `${parseInt(d)} ${month} ${y}` : `${month} ${y}`
 }
 
-export function PersonDetailSidebar({ person, onClose, onAddRelative }: Props) {
+function kinshipLabels(gender?: string | null) {
+  if (gender === 'male')   return { child: 'Hijo de', parent: 'Padre de' }
+  if (gender === 'female') return { child: 'Hija de', parent: 'Madre de' }
+  return { child: 'Hijo/a de', parent: 'Progenitor/a de' }
+}
+
+function personName(p: KinshipPerson) {
+  return [p.firstName, p.lastName, p.lastName2].filter(Boolean).join(' ')
+}
+
+export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative }: Props) {
   const accent = accentColor(person.gender)
   const fullName = [person.firstName, person.lastName, person.lastName2].filter(Boolean).join(' ')
   const birthFormatted = formatDate(person.birthDate)
@@ -63,6 +87,11 @@ export function PersonDetailSidebar({ person, onClose, onAddRelative }: Props) {
 
   const hasBirth = birthFormatted || person.birthPlace
   const hasDeath = !person.isAlive && (deathFormatted || person.deathPlace)
+
+  const labels = kinshipLabels(person.gender)
+  const hasKinship = kinship && (
+    kinship.parents.length > 0 || kinship.partners.length > 0 || kinship.children.length > 0
+  )
 
   return (
     <div
@@ -226,8 +255,57 @@ export function PersonDetailSidebar({ person, onClose, onAddRelative }: Props) {
           </>
         )}
 
+        {/* Relationships */}
+        {hasKinship && (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
+              <div
+                className="w-1.5 h-1.5 rotate-45"
+                style={{ background: 'var(--rule)', borderRadius: 0.5 }}
+              />
+              <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
+            </div>
+
+            <div className="space-y-4">
+              {kinship!.parents.length > 0 && (
+                <div>
+                  <span style={labelStyle}>{labels.child}</span>
+                  <div className="space-y-1">
+                    {kinship!.parents.map((p) => (
+                      <p key={p.id} style={valueStyle}>{personName(p)}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {kinship!.partners.length > 0 && (
+                <div>
+                  <span style={labelStyle}>Pareja de</span>
+                  <div className="space-y-1">
+                    {kinship!.partners.map((p) => (
+                      <p key={p.id} style={valueStyle}>{personName(p)}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {kinship!.children.length > 0 && (
+                <div>
+                  <span style={labelStyle}>{labels.parent}</span>
+                  <div className="space-y-1">
+                    {kinship!.children.map((p) => (
+                      <p key={p.id} style={valueStyle}>{personName(p)}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         {/* Empty state */}
-        {!hasBirth && !hasDeath && !person.bio && (
+        {!hasBirth && !hasDeath && !person.bio && !hasKinship && (
           <p
             style={{
               fontFamily: 'var(--font-body)',

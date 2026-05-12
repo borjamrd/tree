@@ -20,7 +20,7 @@ import { PersonNode } from './PersonNode'
 import { UnionNode } from './UnionNode'
 import { DeletableEdge } from './DeletableEdge'
 import { RelativeSidebar } from './RelativeSidebar'
-import { PersonDetailSidebar, type PersonDetail } from './PersonDetailSidebar'
+import { PersonDetailSidebar, type PersonDetail, type KinshipData } from './PersonDetailSidebar'
 import { treeToFlow } from '@/lib/tree-transform'
 import { updatePersonPosition } from '@/server/persons'
 import { linkPersons, addExistingChild, addChild, deleteUnion, removeChild, updateUnionPosition } from '@/server/relationships'
@@ -41,6 +41,51 @@ type Props = {
   parentage: Parameters<typeof treeToFlow>[2]
 }
 
+function computeKinship(
+  personId: string,
+  persons: Props['persons'],
+  unions: Props['unions'],
+  parentage: Props['parentage'],
+): KinshipData {
+  const personMap = new Map(persons.map((p) => [p.id, p]))
+
+  // Parents: parentage records where childId matches → look up union → get both partners
+  const parentUnionIds = new Set(
+    parentage.filter((r) => r.childId === personId).map((r) => r.unionId)
+  )
+  const parentIds = new Set<string>()
+  for (const uid of parentUnionIds) {
+    const u = unions.find((u) => u.id === uid)
+    if (!u) continue
+    if (u.person1Id) parentIds.add(u.person1Id)
+    if (u.person2Id) parentIds.add(u.person2Id)
+  }
+
+  // Partners: unions where this person is person1 or person2
+  const partnerIds = new Set<string>()
+  for (const u of unions) {
+    if (u.person1Id === personId && u.person2Id) partnerIds.add(u.person2Id)
+    if (u.person2Id === personId) partnerIds.add(u.person1Id)
+  }
+
+  // Children: unions where this person is person1 or person2 → parentage records for those unions
+  const myUnionIds = new Set(
+    unions.filter((u) => u.person1Id === personId || u.person2Id === personId).map((u) => u.id)
+  )
+  const childIds = new Set<string>()
+  for (const r of parentage) {
+    if (myUnionIds.has(r.unionId)) childIds.add(r.childId)
+  }
+
+  const pick = (ids: Set<string>) =>
+    [...ids].flatMap((id) => {
+      const p = personMap.get(id)
+      return p ? [{ id: p.id, firstName: p.firstName, lastName: p.lastName, lastName2: (p.lastName2 as string | null | undefined) }] : []
+    })
+
+  return { parents: pick(parentIds), partners: pick(partnerIds), children: pick(childIds) }
+}
+
 type SidebarState = {
   personId: string
   firstName: string
@@ -55,6 +100,7 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
   const [, startTransition] = useTransition()
   const [sidebar, setSidebar] = useState<SidebarState>(null)
   const [personDetail, setPersonDetail] = useState<PersonDetail | null>(null)
+  const [personKinship, setPersonKinship] = useState<KinshipData | null>(null)
 
   const { nodes: initialNodes, edges: initialEdges } = treeToFlow(persons, unions, parentage)
   const [nodes, setNodes] = useNodesState(initialNodes)
@@ -73,6 +119,7 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
     if (!node) return
     const d = node.data as { firstName: string; lastName?: string | null }
     setPersonDetail(null)
+    setPersonKinship(null)
     setSidebar({
       personId,
       firstName: d.firstName,
@@ -86,7 +133,8 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
     if (!node) return
     setSidebar(null)
     setPersonDetail(node.data as PersonDetail)
-  }, [nodes])
+    setPersonKinship(computeKinship(personId, persons, unions, parentage))
+  }, [nodes, persons, unions, parentage])
 
   // Inject callbacks into person node data
   const nodesWithCallback = nodes.map((n) =>
@@ -207,14 +255,15 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
       {(personDetail ?? sidebar) && (
         <div
           className="absolute inset-0 z-[9]"
-          onClick={() => { setPersonDetail(null); setSidebar(null) }}
+          onClick={() => { setPersonDetail(null); setPersonKinship(null); setSidebar(null) }}
         />
       )}
 
       {personDetail && (
         <PersonDetailSidebar
           person={personDetail}
-          onClose={() => setPersonDetail(null)}
+          kinship={personKinship ?? undefined}
+          onClose={() => { setPersonDetail(null); setPersonKinship(null) }}
           onAddRelative={() => {
             setSidebar({
               personId: personDetail.id,
@@ -223,6 +272,7 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
               position: nodes.find((n) => n.id === personDetail.id)?.position ?? { x: 0, y: 0 },
             })
             setPersonDetail(null)
+            setPersonKinship(null)
           }}
         />
       )}
