@@ -19,9 +19,11 @@ type Props = {
   action: (input: PersonInput) => Promise<{ success: true; data?: { id: string } | unknown } | { success: false; error: string }>
   submitLabel: string
   redirectTo?: string
+  /** When provided, called after a successful submission instead of navigating away */
+  onSuccess?: (id: string) => void
 }
 
-export function PersonForm({ treeId, personId, defaultValues, action, submitLabel, redirectTo }: Props) {
+export function PersonForm({ treeId, personId, defaultValues, action, submitLabel, redirectTo, onSuccess }: Props) {
   const t = useTranslations('personForm')
   const tCommon = useTranslations('common')
   const router = useRouter()
@@ -42,7 +44,11 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
       if (result.success) {
         toast.success(personId ? t('successUpdate') : t('successAdd'))
         const id = (result.data as { id?: string } | undefined)?.id ?? personId ?? ''
-        router.push(redirectTo ? redirectTo.replace('[id]', id) : `/trees/${treeId}/persons/${id}`)
+        if (onSuccess) {
+          onSuccess(id)
+        } else {
+          router.push(redirectTo ? redirectTo.replace('[id]', id) : `/trees/${treeId}/persons/${id}`)
+        }
       } else {
         toast.error(result.error)
       }
