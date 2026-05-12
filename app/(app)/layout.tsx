@@ -1,16 +1,18 @@
-import { devSession } from '@/lib/dev-session'
-import Link from 'next/link'
-import { TreePine, LayoutDashboard } from 'lucide-react'
+import { devSession } from "@/lib/dev-session";
+import Link from "next/link";
+import { TreePine, LayoutDashboard } from "lucide-react";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = devSession()
+  const session = devSession();
 
   return (
     <div className="flex h-screen bg-stone-50">
       <aside className="w-56 flex flex-col border-r border-stone-100 bg-white px-4 py-6">
         <div className="flex items-center gap-2 mb-8">
           <TreePine className="w-5 h-5 text-stone-700" />
-          <span className="font-semibold text-stone-800 text-lg">Tre</span>
+          <Link href="/">
+            <span className="font-semibold text-stone-800 text-lg">Tre</span>
+          </Link>
         </div>
 
         <nav className="flex-1 space-y-1">
@@ -30,9 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
+      <main className="flex-1 overflow-auto">{children}</main>
     </div>
-  )
+  );
 }
