@@ -4,6 +4,7 @@ import {
   ReactFlow,
   Controls,
   Background,
+  BackgroundVariant,
   useNodesState,
   useEdgesState,
   type OnNodesChange,
@@ -169,8 +170,13 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
         connectionMode={ConnectionMode.Loose}
         fitView
       >
-        <Controls />
-        <Background />
+        <Controls showInteractive={false} />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={28}
+          size={1}
+          color="#D4C9B5"
+        />
       </ReactFlow>
 
       {sidebar && (

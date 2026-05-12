@@ -74,6 +74,47 @@ body {
   opacity: 0;
 }
 
+/* ── ReactFlow canvas overrides ─────────────────────────────── */
+.react-flow {
+  background: var(--parchment) !important;
+}
+.react-flow__controls {
+  box-shadow: none !important;
+  border: 1px solid var(--rule) !important;
+  border-radius: 2px !important;
+  overflow: hidden;
+  background: transparent !important;
+}
+.react-flow__controls-button {
+  background: var(--parchment) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--rule) !important;
+  color: var(--sepia) !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 5px !important;
+}
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+.react-flow__controls-button:hover {
+  background: var(--parchment-mid) !important;
+}
+.react-flow__controls-button svg {
+  fill: var(--sepia) !important;
+  max-width: 13px;
+  max-height: 13px;
+}
+.react-flow__attribution {
+  display: none !important;
+}
+.react-flow__node:focus-visible {
+  outline: none;
+}
+.react-flow__handle {
+  transition: opacity 0.2s ease;
+}
+
 @media print {
   /* Hide everything except portrait cards */
   body > *:not(.print-cards) { display: none !important; }

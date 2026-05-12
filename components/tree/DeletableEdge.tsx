@@ -12,6 +12,7 @@ export function DeletableEdge({ id, sourceX, sourceY, targetX, targetY, data }: 
 
   return (
     <>
+      {/* Invisible wide hit area */}
       <path
         d={edgePath}
         stroke="transparent"
@@ -20,7 +21,15 @@ export function DeletableEdge({ id, sourceX, sourceY, targetX, targetY, data }: 
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       />
-      <BaseEdge id={id} path={edgePath} style={{ stroke: '#d6d3d1', strokeWidth: 1.5 }} />
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        style={{
+          stroke: hovered ? 'var(--sepia)' : 'var(--rule)',
+          strokeWidth: hovered ? 1.5 : 1,
+          transition: 'stroke 0.15s ease, stroke-width 0.15s ease',
+        }}
+      />
       {hovered && d?.onDelete && (
         <EdgeLabelRenderer>
           <div
@@ -31,9 +40,11 @@ export function DeletableEdge({ id, sourceX, sourceY, targetX, targetY, data }: 
           >
             <button
               onClick={d.onDelete}
-              className="w-5 h-5 bg-red-400 hover:bg-red-500 rounded-full flex items-center justify-center shadow transition-colors"
+              className="w-4 h-4 rounded-full flex items-center justify-center shadow-sm transition-colors"
+              style={{ background: 'var(--ink)' }}
+              title="Remove connection"
             >
-              <X className="w-3 h-3 text-white" />
+              <X className="w-2.5 h-2.5" style={{ color: 'var(--parchment)' }} />
             </button>
           </div>
         </EdgeLabelRenderer>
