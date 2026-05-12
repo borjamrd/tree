@@ -56,6 +56,7 @@ export function treeToFlow(
     edges.push({
       id: `e-p1-${u.id}`,
       source: u.person1Id,
+      sourceHandle: 'bottom',
       target: `union-${u.id}`,
       targetHandle: 'p1',
       type: 'deletable',
@@ -65,6 +66,7 @@ export function treeToFlow(
       edges.push({
         id: `e-p2-${u.id}`,
         source: u.person2Id,
+        sourceHandle: 'bottom',
         target: `union-${u.id}`,
         targetHandle: 'p2',
         type: 'deletable',
@@ -77,6 +79,7 @@ export function treeToFlow(
       id: `e-par-${par.id}`,
       source: `union-${par.unionId}`,
       target: par.childId,
+      targetHandle: 'top',
       type: 'deletable',
     })
   }

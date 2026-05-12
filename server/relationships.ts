@@ -2,7 +2,7 @@
 import { devSession } from '@/lib/dev-session'
 import { db } from '@/lib/db'
 import { unions, parentage, trees, persons } from '@/lib/db/schema'
-import { eq, and, or } from 'drizzle-orm'
+import { eq, and, or, inArray } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { personSchema, type PersonInput } from '@/lib/validations'
 
@@ -231,6 +231,119 @@ export async function removeChild(parentageId: string) {
   if (!entry || entry.union.tree.userId !== user.id) throw new Error('Not found')
   await db.delete(parentage).where(eq(parentage.id, parentageId))
   revalidatePath(`/trees/${entry.union.treeId}`)
+}
+
+export async function addExistingChild(
+  treeId: string,
+  parentId: string,
+  childId: string,
+  unionPos: { x: number; y: number }
+) {
+  const { user } = devSession()
+  await verifyTreeOwnership(treeId, user.id)
+
+  const [union] = await db.insert(unions).values({
+    treeId,
+    person1Id: parentId,
+    person2Id: null,
+    type: 'unknown',
+    posX: String(unionPos.x),
+    posY: String(unionPos.y),
+  }).returning()
+
+  await db.insert(parentage).values({ unionId: union.id, childId, type: 'biological' })
+  revalidatePath(`/trees/${treeId}`)
+}
+
+export async function linkPersons(
+  treeId: string,
+  personAId: string,
+  personBId: string,
+  unionPos: { x: number; y: number }
+) {
+  const { user } = devSession()
+  await verifyTreeOwnership(treeId, user.id)
+
+  // Load all unions (with their children) for both persons
+  const [unionsA, unionsB] = await Promise.all([
+    db.query.unions.findMany({
+      where: and(
+        eq(unions.treeId, treeId),
+        or(eq(unions.person1Id, personAId), eq(unions.person2Id, personAId))
+      ),
+      with: { children: true },
+    }),
+    db.query.unions.findMany({
+      where: and(
+        eq(unions.treeId, treeId),
+        or(eq(unions.person1Id, personBId), eq(unions.person2Id, personBId))
+      ),
+      with: { children: true },
+    }),
+  ])
+
+  // Find pairs of unions that share at least one child — merge those only
+  type UnionWithChildren = (typeof unionsA)[number]
+  const merges: Array<{ uA: UnionWithChildren; uB: UnionWithChildren; childIds: string[] }> = []
+  const mergedAIds = new Set<string>()
+  const mergedBIds = new Set<string>()
+
+  for (const uA of unionsA) {
+    for (const uB of unionsB) {
+      const setA = new Set(uA.children.map((c) => c.childId))
+      const setB = new Set(uB.children.map((c) => c.childId))
+      const shared = [...setA].filter((id) => setB.has(id))
+      if (shared.length > 0) {
+        // Collect all children from both unions into the merged one
+        const allChildIds = [...new Set([...setA, ...setB])]
+        merges.push({ uA, uB, childIds: allChildIds })
+        mergedAIds.add(uA.id)
+        mergedBIds.add(uB.id)
+      }
+    }
+  }
+
+  if (merges.length > 0) {
+    for (const { uA, uB, childIds } of merges) {
+      // Create the shared union centered between the two persons
+      const [newUnion] = await db.insert(unions).values({
+        treeId,
+        person1Id: personAId,
+        person2Id: personBId,
+        type: 'unknown',
+        posX: String(unionPos.x),
+        posY: String(unionPos.y),
+      }).returning()
+
+      // Remove old parentage records from both dissolved unions
+      await db.delete(parentage).where(
+        and(
+          inArray(parentage.childId, childIds),
+          inArray(parentage.unionId, [uA.id, uB.id])
+        )
+      )
+
+      // Re-attach all children to the new shared union
+      await db.insert(parentage).values(
+        childIds.map((childId) => ({ unionId: newUnion.id, childId, type: 'biological' as const }))
+      )
+
+      // Delete the now-empty single-parent unions
+      await db.delete(unions).where(inArray(unions.id, [uA.id, uB.id]))
+    }
+  } else {
+    // No children in common — just create a partnership union
+    await db.insert(unions).values({
+      treeId,
+      person1Id: personAId,
+      person2Id: personBId,
+      type: 'unknown',
+      posX: String(unionPos.x),
+      posY: String(unionPos.y),
+    })
+  }
+
+  revalidatePath(`/trees/${treeId}`)
 }
 
 export async function getTreeRelationships(treeId: string) {

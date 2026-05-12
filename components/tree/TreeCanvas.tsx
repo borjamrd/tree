@@ -10,6 +10,7 @@ import {
   type NodeChange,
   type Connection,
   applyNodeChanges,
+  ConnectionMode,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useRouter } from 'next/navigation'
@@ -19,7 +20,7 @@ import { DeletableEdge } from './DeletableEdge'
 import { RelativeSidebar } from './RelativeSidebar'
 import { treeToFlow } from '@/lib/tree-transform'
 import { updatePersonPosition } from '@/server/persons'
-import { createUnion, addChild, deleteUnion, removeChild } from '@/server/relationships'
+import { linkPersons, addExistingChild, addChild, deleteUnion, removeChild } from '@/server/relationships'
 
 const nodeTypes = {
   person: PersonNode,
@@ -115,7 +116,7 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
   }, [setNodes])
 
   const onConnect = useCallback((connection: Connection) => {
-    const { source, target } = connection
+    const { source, target, sourceHandle } = connection
     if (!source || !target) return
 
     const isSourceUnion = source.startsWith('union-')
@@ -125,9 +126,28 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
       if (!isSourceUnion && !isTargetUnion) {
         const sourceNode = nodes.find((n) => n.id === source)
         const targetNode = nodes.find((n) => n.id === target)
-        const posX = String(((sourceNode?.position.x ?? 0) + (targetNode?.position.x ?? 0)) / 2)
-        const posY = String(Math.max(sourceNode?.position.y ?? 0, targetNode?.position.y ?? 0) + 120)
-        await createUnion(treeId, source, target, 'unknown', posX, posY)
+        const sX = sourceNode?.position.x ?? 0
+        const tX = targetNode?.position.x ?? 0
+        const sY = sourceNode?.position.y ?? 0
+        const tY = targetNode?.position.y ?? 0
+        const CENTER = 72 // (NODE_W - UNION_W) / 2
+
+        if (sourceHandle === 'left' || sourceHandle === 'right') {
+          // Partner: create/merge union between the two persons
+          const unionX = (sX + tX) / 2 + CENTER
+          const unionY = Math.max(sY, tY) + 120
+          await linkPersons(treeId, source, target, { x: unionX, y: unionY })
+        } else if (sourceHandle === 'bottom') {
+          // Source is parent, target is child
+          const unionX = sX + CENTER
+          const unionY = sY + 100
+          await addExistingChild(treeId, source, target, { x: unionX, y: unionY })
+        } else if (sourceHandle === 'top') {
+          // Target is parent, source is child
+          const unionX = tX + CENTER
+          const unionY = tY + 100
+          await addExistingChild(treeId, target, source, { x: unionX, y: unionY })
+        }
         router.refresh()
       } else if (isSourceUnion && !isTargetUnion) {
         const unionId = source.replace('union-', '')
@@ -146,6 +166,7 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        connectionMode={ConnectionMode.Loose}
         fitView
       >
         <Controls />

@@ -26,7 +26,9 @@ export function PersonNode({ data, positionAbsoluteX, positionAbsoluteY }: NodeP
 
   return (
     <div className="group w-40 rounded-xl border border-stone-200 bg-white shadow-sm p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow">
-      <Handle type="target" position={Position.Top} />
+      <Handle type="source" id="top"    position={Position.Top}    title="Add parent"  className="!opacity-0 group-hover:!opacity-100 !transition-opacity" />
+      <Handle type="source" id="left"   position={Position.Left}   title="Add partner" className="!opacity-0 group-hover:!opacity-100 !transition-opacity !bg-rose-300" />
+      <Handle type="source" id="right"  position={Position.Right}  title="Add partner" className="!opacity-0 group-hover:!opacity-100 !transition-opacity !bg-rose-300" />
 
       {d.photoUrl && (
         <div
@@ -58,7 +60,7 @@ export function PersonNode({ data, positionAbsoluteX, positionAbsoluteY }: NodeP
         <UserPlus className="w-3 h-3 text-white" />
       </button>
 
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" id="bottom" position={Position.Bottom} title="Add child"   className="!opacity-0 group-hover:!opacity-100 !transition-opacity" />
     </div>
   )
 }
