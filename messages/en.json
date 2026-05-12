@@ -15,8 +15,7 @@
   "dashboard": {
     "title": "Your Lineage",
     "subtitleEmpty": "Begin your journey into the past by documenting your family's unique story.",
-    "subtitleCount_one": "Overseeing {{count}} legacy across generations.",
-    "subtitleCount_other": "Overseeing {{count}} legacies across generations.",
+    "subtitleCount": "{count, plural, one {Overseeing # legacy across generations.} other {Overseeing # legacies across generations.}}",
     "emptyTitle": "No Records Found",
     "emptyDescription": "Every great history starts with a single name. Create your first family tree to begin.",
     "explore": "Explore",
@@ -120,7 +119,7 @@
   },
   "relativeSidebar": {
     "title": "Add Relative",
-    "of": "of {{name}}",
+    "of": "of {name}",
     "relationship": "Relationship",
     "partner": "Partner",
     "child": "Child",
@@ -132,8 +131,8 @@
     "gender": "Gender",
     "birthDate": "Birth date",
     "birthPlace": "Birth place",
-    "submit": "Add {{relationship}}",
+    "submit": "Add {relationship}",
     "submitting": "Adding…",
-    "successToast": "{{relationship}} added"
+    "successToast": "{relationship} added"
   }
 }
