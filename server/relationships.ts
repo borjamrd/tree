@@ -1,9 +1,104 @@
 'use server'
 import { devSession } from '@/lib/dev-session'
 import { db } from '@/lib/db'
-import { unions, parentage, trees } from '@/lib/db/schema'
+import { unions, parentage, trees, persons } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { personSchema, type PersonInput } from '@/lib/validations'
+
+type RelationshipType = 'partner' | 'child' | 'parent'
+type Result<T = void> = { success: true; data?: T } | { success: false; error: string }
+
+function sanitizePerson(input: PersonInput) {
+  const nullIfEmpty = (v: string | undefined) => (v === '' || v === undefined ? null : v)
+  return {
+    ...input,
+    lastName: nullIfEmpty(input.lastName),
+    maidenName: nullIfEmpty(input.maidenName),
+    birthDate: nullIfEmpty(input.birthDate),
+    birthPlace: nullIfEmpty(input.birthPlace),
+    deathDate: nullIfEmpty(input.deathDate),
+    deathPlace: nullIfEmpty(input.deathPlace),
+    photoUrl: nullIfEmpty(input.photoUrl),
+    bio: nullIfEmpty(input.bio),
+    isAlive: input.isAlive ?? true,
+    gender: input.gender ?? 'unknown',
+  }
+}
+
+export async function addRelative(
+  treeId: string,
+  anchorPersonId: string,
+  relationshipType: RelationshipType,
+  personData: PersonInput,
+  anchorPosition: { x: number; y: number }
+): Promise<Result<{ personId: string }>> {
+  try {
+    const { user } = devSession()
+    await verifyTreeOwnership(treeId, user.id)
+
+    const parsed = sanitizePerson(personSchema.parse(personData))
+
+    // Position new node relative to anchor
+    const offset = {
+      partner: { x: 220, y: 0 },
+      child:   { x: 0,   y: 220 },
+      parent:  { x: 0,   y: -220 },
+    }[relationshipType]
+
+    const [newPerson] = await db.insert(persons).values({
+      ...parsed,
+      treeId,
+      posX: String(anchorPosition.x + offset.x),
+      posY: String(anchorPosition.y + offset.y),
+    }).returning()
+
+    if (relationshipType === 'partner') {
+      // union node sits between the two persons
+      const unionX = (anchorPosition.x + anchorPosition.x + offset.x) / 2
+      const unionY = anchorPosition.y + 80
+      await db.insert(unions).values({
+        treeId,
+        person1Id: anchorPersonId,
+        person2Id: newPerson.id,
+        type: 'unknown',
+        posX: String(unionX),
+        posY: String(unionY),
+      })
+    } else if (relationshipType === 'child') {
+      // anchor is the parent — create a single-parent union then add the child
+      const unionX = anchorPosition.x
+      const unionY = anchorPosition.y + 100
+      const [union] = await db.insert(unions).values({
+        treeId,
+        person1Id: anchorPersonId,
+        person2Id: null,
+        type: 'unknown',
+        posX: String(unionX),
+        posY: String(unionY),
+      }).returning()
+      await db.insert(parentage).values({ unionId: union.id, childId: newPerson.id, type: 'biological' })
+    } else {
+      // parent: new person is the parent, anchor is the child
+      const unionX = anchorPosition.x
+      const unionY = anchorPosition.y - 100
+      const [union] = await db.insert(unions).values({
+        treeId,
+        person1Id: newPerson.id,
+        person2Id: null,
+        type: 'unknown',
+        posX: String(unionX),
+        posY: String(unionY),
+      }).returning()
+      await db.insert(parentage).values({ unionId: union.id, childId: anchorPersonId, type: 'biological' })
+    }
+
+    revalidatePath(`/trees/${treeId}`)
+    return { success: true, data: { personId: newPerson.id } }
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Failed to add relative' }
+  }
+}
 
 async function verifyTreeOwnership(treeId: string, userId: string) {
   const tree = await db.query.trees.findFirst({

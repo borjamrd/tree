@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useTransition } from 'react'
+import { useCallback, useEffect, useState, useTransition } from 'react'
 import {
   ReactFlow,
   Controls,
@@ -15,6 +15,7 @@ import '@xyflow/react/dist/style.css'
 import { useRouter } from 'next/navigation'
 import { PersonNode } from './PersonNode'
 import { UnionNode } from './UnionNode'
+import { RelativeSidebar } from './RelativeSidebar'
 import { treeToFlow } from '@/lib/tree-transform'
 import { updatePersonPosition } from '@/server/persons'
 import { createUnion, addChild } from '@/server/relationships'
@@ -31,22 +32,50 @@ type Props = {
   parentage: Parameters<typeof treeToFlow>[2]
 }
 
+type SidebarState = {
+  personId: string
+  firstName: string
+  lastName?: string | null
+  position: { x: number; y: number }
+} | null
+
 let positionTimer: ReturnType<typeof setTimeout>
 
 export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
+  const [sidebar, setSidebar] = useState<SidebarState>(null)
 
   const { nodes: initialNodes, edges: initialEdges } = treeToFlow(persons, unions, parentage)
   const [nodes, setNodes] = useNodesState(initialNodes)
   const [edges, setEdges] = useEdgesState(initialEdges)
 
-  // Sync when server data changes after router.refresh()
+  // Sync when server data refreshes
   useEffect(() => {
     const { nodes: freshNodes, edges: freshEdges } = treeToFlow(persons, unions, parentage)
     setNodes(freshNodes)
     setEdges(freshEdges)
   }, [persons, unions, parentage, setNodes, setEdges])
+
+  // Stable callback passed into node data
+  const handleAddRelative = useCallback((personId: string) => {
+    const node = nodes.find((n) => n.id === personId)
+    if (!node) return
+    const d = node.data as { firstName: string; lastName?: string | null }
+    setSidebar({
+      personId,
+      firstName: d.firstName,
+      lastName: d.lastName,
+      position: node.position,
+    })
+  }, [nodes])
+
+  // Inject callback into person node data
+  const nodesWithCallback = nodes.map((n) =>
+    n.type === 'person'
+      ? { ...n, data: { ...n.data, onAddRelative: handleAddRelative } }
+      : n
+  )
 
   const onNodesChange: OnNodesChange = useCallback((changes: NodeChange[]) => {
     setNodes((nds) => applyNodeChanges(changes, nds))
@@ -73,19 +102,13 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
 
     startTransition(async () => {
       if (!isSourceUnion && !isTargetUnion) {
-        // person → person: create union node between them
         const sourceNode = nodes.find((n) => n.id === source)
         const targetNode = nodes.find((n) => n.id === target)
-        const posX = String(
-          ((sourceNode?.position.x ?? 0) + (targetNode?.position.x ?? 0)) / 2
-        )
-        const posY = String(
-          Math.max(sourceNode?.position.y ?? 0, targetNode?.position.y ?? 0) + 120
-        )
+        const posX = String(((sourceNode?.position.x ?? 0) + (targetNode?.position.x ?? 0)) / 2)
+        const posY = String(Math.max(sourceNode?.position.y ?? 0, targetNode?.position.y ?? 0) + 120)
         await createUnion(treeId, source, target, 'unknown', posX, posY)
         router.refresh()
       } else if (isSourceUnion && !isTargetUnion) {
-        // union → person: add child
         const unionId = source.replace('union-', '')
         await addChild(unionId, target)
         router.refresh()
@@ -94,9 +117,9 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
   }, [nodes, treeId, router, startTransition])
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full relative">
       <ReactFlow
-        nodes={nodes}
+        nodes={nodesWithCallback}
         edges={edges}
         onNodesChange={onNodesChange}
         onConnect={onConnect}
@@ -107,9 +130,22 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
         <Background />
       </ReactFlow>
 
-      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-stone-400 pointer-events-none select-none">
-        Arrastra entre personas para crear una unión · Arrastra desde una unión a una persona para añadir un hijo
-      </div>
+      {sidebar && (
+        <RelativeSidebar
+          treeId={treeId}
+          anchorPerson={{
+            id: sidebar.personId,
+            firstName: sidebar.firstName,
+            lastName: sidebar.lastName,
+            position: sidebar.position,
+          }}
+          onClose={() => setSidebar(null)}
+          onSuccess={() => {
+            setSidebar(null)
+            router.refresh()
+          }}
+        />
+      )}
     </div>
   )
 }

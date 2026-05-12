@@ -54,7 +54,6 @@ export default async function EditPersonPage({
         }}
         action={action}
         submitLabel="Save changes"
-        redirectTo={() => `/trees/${treeId}/persons/${personId}`}
       />
     </div>
   )

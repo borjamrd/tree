@@ -16,7 +16,7 @@ type Props = {
   defaultValues?: Partial<PersonInput>
   action: (input: PersonInput) => Promise<{ success: true; data?: { id: string } | unknown } | { success: false; error: string }>
   submitLabel: string
-  redirectTo?: (id: string) => string
+  redirectTo?: string
 }
 
 export function PersonForm({ treeId, personId, defaultValues, action, submitLabel, redirectTo }: Props) {
@@ -38,7 +38,7 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
       if (result.success) {
         toast.success(personId ? 'Person updated' : 'Person added')
         const id = (result.data as { id?: string } | undefined)?.id ?? personId ?? ''
-        router.push(redirectTo ? redirectTo(id) : `/trees/${treeId}/persons/${id}`)
+        router.push(redirectTo ? redirectTo.replace('[id]', id) : `/trees/${treeId}/persons/${id}`)
       } else {
         toast.error(result.error)
       }
