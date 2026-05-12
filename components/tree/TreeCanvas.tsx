@@ -200,6 +200,14 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
         />
       </ReactFlow>
 
+      {/* Transparent backdrop — closes any open sidebar on outside click */}
+      {(personDetail ?? sidebar) && (
+        <div
+          className="absolute inset-0 z-[9]"
+          onClick={() => { setPersonDetail(null); setSidebar(null) }}
+        />
+      )}
+
       {personDetail && (
         <PersonDetailSidebar
           person={personDetail}
