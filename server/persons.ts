@@ -96,6 +96,22 @@ export async function updatePersonPosition(personId: string, x: number, y: numbe
   } catch {}
 }
 
+export async function setPersonAsSelf(personId: string, isSelf: boolean): Promise<Result> {
+  try {
+    const { user } = devSession()
+    const person = await verifyPersonOwnership(personId, user.id)
+    const treeId = person.treeId
+    await db.update(persons).set({ isSelf: false }).where(eq(persons.treeId, treeId))
+    if (isSelf) {
+      await db.update(persons).set({ isSelf: true }).where(eq(persons.id, personId))
+    }
+    revalidatePath(`/trees/${treeId}`)
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Failed to update' }
+  }
+}
+
 export async function getTreePersons(treeId: string) {
   const { user } = devSession()
   await verifyTreeOwnership(treeId, user.id)

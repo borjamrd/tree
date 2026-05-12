@@ -22,7 +22,7 @@ import { DeletableEdge } from './DeletableEdge'
 import { RelativeSidebar } from './RelativeSidebar'
 import { PersonDetailSidebar, type PersonDetail, type KinshipData } from './PersonDetailSidebar'
 import { treeToFlow } from '@/lib/tree-transform'
-import { updatePersonPosition } from '@/server/persons'
+import { updatePersonPosition, setPersonAsSelf } from '@/server/persons'
 import { linkPersons, addExistingChild, addChild, deleteUnion, removeChild, updateUnionPosition } from '@/server/relationships'
 
 const nodeTypes = {
@@ -127,6 +127,13 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
       position: node.position,
     })
   }, [nodes])
+
+  const handleToggleSelf = useCallback((personId: string, isSelf: boolean) => {
+    startTransition(async () => {
+      await setPersonAsSelf(personId, isSelf)
+      router.refresh()
+    })
+  }, [router])
 
   const handlePersonClick = useCallback((personId: string) => {
     const node = nodes.find((n) => n.id === personId)
@@ -264,6 +271,7 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
           person={personDetail}
           kinship={personKinship ?? undefined}
           onClose={() => { setPersonDetail(null); setPersonKinship(null) }}
+          onToggleSelf={(isSelf) => handleToggleSelf(personDetail.id, isSelf)}
           onAddRelative={() => {
             setSidebar({
               personId: personDetail.id,

@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { X, ArrowUpRight, UserPlus } from 'lucide-react'
+import { X, ArrowUpRight, UserPlus, Fingerprint } from 'lucide-react'
 
 export type PersonDetail = {
   id: string
@@ -14,6 +14,7 @@ export type PersonDetail = {
   deathDate?: string | null
   deathPlace?: string | null
   isAlive?: boolean
+  isSelf?: boolean
   photoUrl?: string | null
   bio?: string | null
 }
@@ -36,6 +37,7 @@ type Props = {
   kinship?: KinshipData
   onClose: () => void
   onAddRelative: () => void
+  onToggleSelf: (isSelf: boolean) => void
 }
 
 const labelStyle: React.CSSProperties = {
@@ -79,7 +81,7 @@ function personName(p: KinshipPerson) {
   return [p.firstName, p.lastName, p.lastName2].filter(Boolean).join(' ')
 }
 
-export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative }: Props) {
+export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, onToggleSelf }: Props) {
   const accent = accentColor(person.gender)
   const fullName = [person.firstName, person.lastName, person.lastName2].filter(Boolean).join(' ')
   const birthFormatted = formatDate(person.birthDate)
@@ -323,6 +325,34 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative }:
 
       {/* Footer */}
       <div className="px-5 py-4 space-y-2" style={{ borderTop: '1px solid var(--rule)' }}>
+        <button
+          onClick={() => onToggleSelf(!person.isSelf)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 transition-colors duration-150"
+          style={{
+            border: `1px solid ${person.isSelf ? '#6B8F71' : 'var(--rule)'}`,
+            background: person.isSelf ? 'rgba(107,143,113,0.08)' : 'transparent',
+            color: person.isSelf ? '#6B8F71' : 'var(--sepia)',
+            fontFamily: 'var(--font-body)',
+            fontSize: '10px',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+          }}
+          onMouseEnter={(e) => {
+            if (!person.isSelf) {
+              e.currentTarget.style.borderColor = 'var(--ink)'
+              e.currentTarget.style.color = 'var(--ink)'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!person.isSelf) {
+              e.currentTarget.style.borderColor = 'var(--rule)'
+              e.currentTarget.style.color = 'var(--sepia)'
+            }
+          }}
+        >
+          <Fingerprint className="w-3.5 h-3.5" />
+          {person.isSelf ? 'Soy yo' : 'Marcar como yo'}
+        </button>
         <button
           onClick={onAddRelative}
           className="w-full flex items-center justify-center gap-2 py-2.5 transition-colors duration-150"

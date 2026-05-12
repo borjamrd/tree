@@ -13,6 +13,7 @@ type PersonData = {
   birthDate?: string | null
   deathDate?: string | null
   photoUrl?: string | null
+  isSelf?: boolean
   onAddRelative?: (personId: string) => void
   onPersonClick?: (personId: string) => void
 }
@@ -30,6 +31,7 @@ export function PersonNode({ data }: NodeProps) {
   const d = data as PersonData
   const accent = accentColor(d.gender)
   const fullName = [d.firstName, d.lastName, d.lastName2].filter(Boolean).join(' ')
+  const selfColor = '#6B8F71'
 
   function handleAddRelative(e: React.MouseEvent) {
     e.preventDefault()
@@ -48,8 +50,10 @@ export function PersonNode({ data }: NodeProps) {
       className="group relative w-44 cursor-grab active:cursor-grabbing select-none"
       style={{
         background: 'var(--parchment)',
-        border: '1px solid var(--rule)',
-        boxShadow: '0 2px 12px rgba(28,21,16,0.07), 0 1px 3px rgba(28,21,16,0.04)',
+        border: d.isSelf ? `1.5px solid ${selfColor}` : '1px solid var(--rule)',
+        boxShadow: d.isSelf
+          ? `0 2px 12px rgba(107,143,113,0.18), 0 1px 3px rgba(107,143,113,0.12)`
+          : '0 2px 12px rgba(28,21,16,0.07), 0 1px 3px rgba(28,21,16,0.04)',
       }}
     >
       {/* Gender accent bar */}
