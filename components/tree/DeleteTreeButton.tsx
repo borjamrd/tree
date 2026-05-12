@@ -1,22 +1,24 @@
 'use client'
 import { useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { deleteTree } from '@/server/trees'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
 
 export function DeleteTreeButton({ treeId }: { treeId: string }) {
+  const t = useTranslations('deleteTree')
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
   function handleDelete() {
-    if (!confirm('Are you sure you want to remove this lineage from the records?')) return
+    if (!confirm(t('confirm'))) return
 
     startTransition(async () => {
       const result = await deleteTree(treeId)
       if (result.success) {
-        toast.success('The lineage has been removed')
+        toast.success(t('successToast'))
         router.refresh()
       } else {
         toast.error(result.error)
@@ -33,7 +35,7 @@ export function DeleteTreeButton({ treeId }: { treeId: string }) {
       disabled={pending}
     >
       <Trash2 className="w-3.5 h-3.5" />
-      {pending ? 'Removing…' : 'Remove'}
+      {pending ? t('common.removing') : t('trigger')}
     </Button>
   )
 }

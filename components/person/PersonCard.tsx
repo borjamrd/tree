@@ -3,6 +3,7 @@ import { useRef } from 'react'
 import Image from 'next/image'
 import { toPng } from 'html-to-image'
 import { Download } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 type Person = {
   id: string
@@ -19,12 +20,13 @@ type Person = {
 
 function formatDate(dateStr: string | null | undefined) {
   if (!dateStr) return null
-  return new Date(dateStr).toLocaleDateString('en-GB', {
+  return new Date(dateStr).toLocaleDateString(undefined, {
     day: 'numeric', month: 'long', year: 'numeric'
   })
 }
 
 export function PersonCard({ person }: { person: Person }) {
+  const t = useTranslations('personCard')
   const cardRef = useRef<HTMLDivElement>(null)
 
   async function downloadCard() {
@@ -57,7 +59,7 @@ export function PersonCard({ person }: { person: Person }) {
         <div className="space-y-2 text-sm">
           {person.birthDate && (
             <div className="flex gap-3">
-              <span className="text-stone-400 w-10 shrink-0">Born</span>
+              <span className="text-stone-400 w-10 shrink-0">{t('birth')}</span>
               <span className="text-stone-700">
                 {formatDate(person.birthDate)}
                 {person.birthPlace && <><br /><span className="text-stone-500">{person.birthPlace}</span></>}
@@ -66,7 +68,7 @@ export function PersonCard({ person }: { person: Person }) {
           )}
           {person.deathDate && (
             <div className="flex gap-3">
-              <span className="text-stone-400 w-10 shrink-0">Died</span>
+              <span className="text-stone-400 w-10 shrink-0">{t('death')}</span>
               <span className="text-stone-700">
                 {formatDate(person.deathDate)}
                 {person.deathPlace && <><br /><span className="text-stone-500">{person.deathPlace}</span></>}
@@ -87,7 +89,7 @@ export function PersonCard({ person }: { person: Person }) {
         className="mt-3 flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 transition-colors"
       >
         <Download className="w-3 h-3" />
-        Export card
+        {t('export')}
       </button>
     </div>
   )

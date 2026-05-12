@@ -3,6 +3,7 @@ import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { X, Heart, Baby, User } from 'lucide-react'
 import { personSchema, type PersonInput } from '@/lib/validations'
 import { addRelative } from '@/server/relationships'
@@ -20,12 +21,6 @@ type Props = {
   onClose: () => void
   onSuccess: () => void
 }
-
-const RELATIONSHIPS: { value: RelationshipType; label: string; icon: React.ReactNode }[] = [
-  { value: 'partner', label: 'Partner', icon: <Heart className="w-3.5 h-3.5" /> },
-  { value: 'child',   label: 'Child',   icon: <Baby  className="w-3.5 h-3.5" /> },
-  { value: 'parent',  label: 'Parent',  icon: <User  className="w-3.5 h-3.5" /> },
-]
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -50,6 +45,8 @@ const labelStyle: React.CSSProperties = {
 }
 
 export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Props) {
+  const t = useTranslations('relativeSidebar')
+  const tForm = useTranslations('personForm')
   const [relationship, setRelationship] = useState<RelationshipType>('partner')
   const [pending, startTransition] = useTransition()
 
@@ -58,11 +55,17 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
     defaultValues: { gender: 'unknown', isAlive: true },
   })
 
+  const RELATIONSHIPS: { value: RelationshipType; label: string; icon: React.ReactNode }[] = [
+    { value: 'partner', label: t('partner'), icon: <Heart className="w-3.5 h-3.5" /> },
+    { value: 'child',   label: t('child'),   icon: <Baby  className="w-3.5 h-3.5" /> },
+    { value: 'parent',  label: t('parent'),  icon: <User  className="w-3.5 h-3.5" /> },
+  ]
+
   function onSubmit(data: PersonInput) {
     startTransition(async () => {
       const result = await addRelative(treeId, anchorPerson.id, relationship, data, anchorPerson.position)
       if (result.success) {
-        toast.success(`${relationship.charAt(0).toUpperCase() + relationship.slice(1)} added`)
+        toast.success(t('successToast', { relationship: t(relationship) }))
         reset()
         onSuccess()
       } else {
@@ -99,7 +102,7 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
               marginBottom: 2,
             }}
           >
-            Add Relative
+            {t('title')}
           </p>
           <p
             style={{
@@ -109,7 +112,7 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
               fontStyle: 'italic',
             }}
           >
-            of {anchorName}
+            {t('of', { name: anchorName })}
           </p>
         </div>
         <button
@@ -126,7 +129,7 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
 
         {/* Relationship selector */}
         <div>
-          <span style={labelStyle}>Relationship</span>
+          <span style={labelStyle}>{t('relationship')}</span>
           <div className="grid grid-cols-3 gap-2">
             {RELATIONSHIPS.map(({ value, label, icon }) => {
               const active = relationship === value
@@ -179,10 +182,10 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
         {/* Form */}
         <form id="relative-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label style={labelStyle}>First name *</label>
+            <label style={labelStyle}>{t('firstName')}</label>
             <input
               {...register('firstName')}
-              placeholder="First name"
+              placeholder={t('firstNamePlaceholder')}
               style={inputStyle}
               onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
               onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
@@ -196,7 +199,7 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label style={labelStyle}>Primer apellido</label>
+              <label style={labelStyle}>{t('lastName')}</label>
               <input
                 {...register('lastName')}
                 style={inputStyle}
@@ -205,7 +208,7 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
               />
             </div>
             <div>
-              <label style={labelStyle}>Segundo apellido</label>
+              <label style={labelStyle}>{t('lastName2')}</label>
               <input
                 {...register('lastName2')}
                 style={inputStyle}
@@ -216,23 +219,23 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
           </div>
 
           <div>
-            <label style={labelStyle}>Gender</label>
+            <label style={labelStyle}>{t('gender')}</label>
             <select
               {...register('gender')}
               style={{ ...inputStyle, cursor: 'pointer' }}
               onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
               onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
             >
-              <option value="unknown">Unknown</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
+              <option value="unknown">{tForm('genderUnknown')}</option>
+              <option value="male">{tForm('genderMale')}</option>
+              <option value="female">{tForm('genderFemale')}</option>
+              <option value="other">{tForm('genderOther')}</option>
             </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label style={labelStyle}>Birth date</label>
+              <label style={labelStyle}>{t('birthDate')}</label>
               <input
                 type="date"
                 {...register('birthDate')}
@@ -242,10 +245,10 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
               />
             </div>
             <div>
-              <label style={labelStyle}>Birth place</label>
+              <label style={labelStyle}>{t('birthPlace')}</label>
               <input
                 {...register('birthPlace')}
-                placeholder="City"
+                placeholder={t('birthPlacePlaceholder')}
                 style={inputStyle}
                 onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
                 onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
@@ -275,7 +278,7 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
           onMouseEnter={(e) => { if (!pending) e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'var(--ink)' }}
           onMouseLeave={(e) => { e.currentTarget.style.background = pending ? 'var(--sepia)' : 'var(--ink)'; e.currentTarget.style.color = 'var(--parchment)' }}
         >
-          {pending ? 'Adding…' : `Add ${relationship}`}
+          {pending ? t('submitting') : t('submit', { relationship: t(relationship) })}
         </button>
       </div>
     </div>

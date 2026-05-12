@@ -1,12 +1,14 @@
 import { getUserTrees } from '@/server/trees'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { TreePine, Calendar, ArrowRight, Plus } from 'lucide-react'
 import { CreateTreeForm } from '@/components/tree/CreateTreeForm'
 import { DeleteTreeButton } from '@/components/tree/DeleteTreeButton'
 import { EditTreeForm } from '@/components/tree/EditTreeForm'
+import { getTranslations } from 'next-intl/server'
 
 export default async function DashboardPage() {
   const trees = await getUserTrees()
+  const t = await getTranslations('dashboard')
 
   return (
     <div className="min-h-full bg-parchment/50 relative overflow-hidden">
@@ -19,12 +21,12 @@ export default async function DashboardPage() {
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 animate-fade-up">
           <div>
             <h1 className="text-5xl md:text-6xl font-display text-ink tracking-tight">
-              Your Lineage
+              {t('title')}
             </h1>
             <p className="font-body italic text-sepia text-lg mt-3 max-w-md">
               {trees.length === 0 
-                ? "Begin your journey into the past by documenting your family's unique story."
-                : `Overseeing ${trees.length} ${trees.length === 1 ? 'legacy' : 'legacies'} across generations.`
+                ? t('subtitleEmpty')
+                : t('subtitleCount', { count: trees.length })
               }
             </p>
           </div>
@@ -36,9 +38,9 @@ export default async function DashboardPage() {
             <div className="w-20 h-20 rounded-full bg-parchment-mid flex items-center justify-center mb-6">
               <TreePine className="w-10 h-10 text-sepia opacity-60" />
             </div>
-            <h2 className="text-2xl font-display text-ink mb-2">No Records Found</h2>
+            <h2 className="text-2xl font-display text-ink mb-2">{t('emptyTitle')}</h2>
             <p className="font-body text-sepia max-w-xs mx-auto mb-8">
-              Every great history starts with a single name. Create your first family tree to begin.
+              {t('emptyDescription')}
             </p>
           </div>
         ) : (
@@ -74,7 +76,7 @@ export default async function DashboardPage() {
                     </div>
                     
                     <p className="font-body text-sepia/80 text-sm line-clamp-2 mb-8 min-h-[2.5rem]">
-                      {tree.description || "A documented history of the family lineage and descendants."}
+                      {tree.description || t('defaultDescription')}
                     </p>
 
                     <div className="flex items-center justify-between border-t border-rule/30 pt-4">
@@ -85,7 +87,7 @@ export default async function DashboardPage() {
                         })}
                       </div>
                       <div className="flex items-center gap-1 text-xs font-medium text-gold group-hover:gap-2 transition-all duration-300">
-                        Explore <ArrowRight className="w-3 h-3" />
+                        {t('explore')} <ArrowRight className="w-3 h-3" />
                       </div>
                     </div>
                   </Link>

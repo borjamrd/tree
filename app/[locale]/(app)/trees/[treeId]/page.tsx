@@ -3,11 +3,13 @@ import { getTreeRelationships } from '@/server/relationships'
 import { getTree } from '@/server/trees'
 import { TreeCanvas } from '@/components/tree/TreeCanvas'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { Plus } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 
 export default async function TreePage({ params }: { params: Promise<{ treeId: string }> }) {
   const { treeId } = await params
+  const t = await getTranslations('treePage')
 
   const [tree, persons, { unions, parentage }] = await Promise.all([
     getTree(treeId),
@@ -26,7 +28,7 @@ export default async function TreePage({ params }: { params: Promise<{ treeId: s
           className="flex items-center gap-1 bg-stone-800 text-white rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-stone-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          Add person
+          {t('addPerson')}
         </Link>
       </header>
       <div className="flex-1">

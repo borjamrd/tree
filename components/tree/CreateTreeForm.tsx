@@ -1,9 +1,10 @@
 'use client'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { useTransition, useState } from 'react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { treeSchema, type TreeInput } from '@/lib/validations'
 import { createTree } from '@/server/trees'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/dialog"
 
 export function CreateTreeForm() {
+  const t = useTranslations('createTree')
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -31,7 +33,7 @@ export function CreateTreeForm() {
     startTransition(async () => {
       const result = await createTree(data)
       if (result.success) {
-        toast.success('Your new lineage has been established')
+        toast.success(t('successToast'))
         reset()
         setOpen(false)
         router.refresh()
@@ -46,7 +48,7 @@ export function CreateTreeForm() {
       <DialogTrigger asChild>
         <Button className="bg-ink text-parchment hover:bg-sepia transition-colors duration-300 rounded-sm px-6 h-12 gap-2 shadow-lg shadow-ink/10">
           <Plus className="w-4 h-4" />
-          Establish New Lineage
+          {t('trigger')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-parchment border-rule/60 rounded-sm p-8">
@@ -54,17 +56,17 @@ export function CreateTreeForm() {
           <div className="w-12 h-12 bg-parchment-mid rounded-full flex items-center justify-center mb-4">
             <TreePine className="w-6 h-6 text-sepia" />
           </div>
-          <DialogTitle className="text-3xl font-display text-ink">New Family Tree</DialogTitle>
+          <DialogTitle className="text-3xl font-display text-ink">{t('title')}</DialogTitle>
           <DialogDescription className="font-body italic text-sepia">
-            Enter the details of the lineage you wish to document.
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-widest text-sepia font-semibold">Tree Name</label>
+            <label className="text-[10px] uppercase tracking-widest text-sepia font-semibold">{t('nameLabel')}</label>
             <Input
               {...register('name')}
-              placeholder="e.g. The Harrison Dynasty"
+              placeholder={t('namePlaceholder')}
               className="bg-white/50 border-rule/40 focus:border-gold/50 focus:ring-gold/20 rounded-sm h-12"
               disabled={pending}
             />
@@ -72,10 +74,10 @@ export function CreateTreeForm() {
           </div>
           
           <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-widest text-sepia font-semibold">Description (Optional)</label>
+            <label className="text-[10px] uppercase tracking-widest text-sepia font-semibold">{t('descriptionLabel')}</label>
             <Textarea
               {...register('description')}
-              placeholder="A brief history of this branch..."
+              placeholder={t('descriptionPlaceholder')}
               className="bg-white/50 border-rule/40 focus:border-gold/50 focus:ring-gold/20 rounded-sm min-h-[100px] resize-none"
               disabled={pending}
             />
@@ -88,14 +90,14 @@ export function CreateTreeForm() {
               onClick={() => setOpen(false)}
               className="text-sepia hover:text-ink hover:bg-parchment-mid/30"
             >
-              Cancel
+              {t('actions.cancel')}
             </Button>
             <Button 
               type="submit" 
               disabled={pending}
               className="bg-ink text-parchment hover:bg-sepia transition-colors duration-300 rounded-sm px-8"
             >
-              {pending ? 'Establishing…' : 'Create Tree'}
+              {pending ? t('submitting') : t('submit')}
             </Button>
           </div>
         </form>

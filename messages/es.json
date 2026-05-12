@@ -1,0 +1,139 @@
+{
+  "common": {
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "back": "Atrás",
+    "edit": "Editar",
+    "remove": "Eliminar",
+    "removing": "Eliminando…"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "appName": "Tre"
+  },
+  "dashboard": {
+    "title": "Tu linaje",
+    "subtitleEmpty": "Empieza tu viaje al pasado documentando la historia única de tu familia.",
+    "subtitleCount_one": "Gestionando {{count}} legado a través de las generaciones.",
+    "subtitleCount_other": "Gestionando {{count}} legados a través de las generaciones.",
+    "emptyTitle": "Sin registros",
+    "emptyDescription": "Toda gran historia empieza con un nombre. Crea tu primer árbol genealógico para comenzar.",
+    "explore": "Explorar",
+    "defaultDescription": "Una historia documentada del linaje familiar y sus descendientes."
+  },
+  "createTree": {
+    "trigger": "Establecer nuevo linaje",
+    "title": "Nuevo árbol genealógico",
+    "description": "Introduce los datos del linaje que deseas documentar.",
+    "nameLabel": "Nombre del árbol",
+    "namePlaceholder": "ej. La Dinastía García",
+    "descriptionLabel": "Descripción (Opcional)",
+    "descriptionPlaceholder": "Una breve historia de esta rama...",
+    "submit": "Crear árbol",
+    "submitting": "Estableciendo…",
+    "successToast": "Tu nuevo linaje ha sido establecido"
+  },
+  "editTree": {
+    "trigger": "Editar",
+    "title": "Modificar registros",
+    "description": "Actualiza el título y el contexto histórico de este linaje.",
+    "nameLabel": "Nombre del árbol",
+    "namePlaceholder": "ej. La Dinastía García",
+    "descriptionLabel": "Descripción (Opcional)",
+    "descriptionPlaceholder": "Una breve historia de esta rama...",
+    "submit": "Actualizar registros",
+    "submitting": "Modificando…",
+    "successToast": "Registros actualizados"
+  },
+  "deleteTree": {
+    "trigger": "Eliminar",
+    "confirm": "¿Seguro que quieres eliminar este linaje de los registros?",
+    "successToast": "El linaje ha sido eliminado"
+  },
+  "treePage": {
+    "addPerson": "Añadir persona"
+  },
+  "personForm": {
+    "firstName": "Nombre *",
+    "lastName": "Primer apellido",
+    "lastName2": "Segundo apellido",
+    "gender": "Género",
+    "genderUnknown": "Desconocido",
+    "genderMale": "Hombre",
+    "genderFemale": "Mujer",
+    "genderOther": "Otro",
+    "birthDate": "Fecha de nacimiento",
+    "birthPlace": "Lugar de nacimiento",
+    "deathDate": "Fecha de fallecimiento",
+    "deathPlace": "Lugar de fallecimiento",
+    "photoUrl": "URL de foto",
+    "photoUrlPlaceholder": "https://…",
+    "bio": "Biografía",
+    "successAdd": "Persona añadida",
+    "successUpdate": "Persona actualizada"
+  },
+  "deletePersonButton": {
+    "trigger": "Eliminar persona",
+    "confirm": "¿Seguro que quieres eliminar esta persona?"
+  },
+  "personDetailPage": {
+    "backToTree": "Volver al árbol",
+    "editPerson": "Editar"
+  },
+  "editPersonPage": {
+    "back": "Atrás",
+    "title": "Editar persona",
+    "submitLabel": "Guardar cambios"
+  },
+  "newPersonPage": {
+    "back": "Volver al árbol",
+    "title": "Añadir persona"
+  },
+  "personCard": {
+    "birth": "Nacimiento",
+    "death": "Fallecimiento",
+    "gender": "Género",
+    "bio": "Biografía",
+    "alive": "Vivo/a",
+    "deceased": "Fallecido/a"
+  },
+  "personSidebar": {
+    "noDetails": "Sin detalles registrados.",
+    "birth": "Nacimiento",
+    "death": "Fallecimiento",
+    "gender": "Género",
+    "biography": "Biografía",
+    "isSelf": "Soy yo",
+    "markAsSelf": "Marcar como yo",
+    "addRelative": "Añadir familiar",
+    "viewProfile": "Ver perfil completo",
+    "kinship": {
+      "childOf_male": "Hijo de",
+      "childOf_female": "Hija de",
+      "childOf_unknown": "Hijo/a de",
+      "parentOf_male": "Padre de",
+      "parentOf_female": "Madre de",
+      "parentOf_unknown": "Progenitor/a de",
+      "partnerOf": "Pareja de"
+    }
+  },
+  "relativeSidebar": {
+    "title": "Añadir familiar",
+    "of": "de {{name}}",
+    "relationship": "Relación",
+    "partner": "Pareja",
+    "child": "Hijo/a",
+    "parent": "Padre/Madre",
+    "firstName": "Nombre *",
+    "firstNamePlaceholder": "Nombre",
+    "lastName": "Primer apellido",
+    "lastName2": "Segundo apellido",
+    "gender": "Género",
+    "birthDate": "Fecha de nacimiento",
+    "birthPlace": "Lugar de nacimiento",
+    "submit": "Añadir {{relationship}}",
+    "submitting": "Añadiendo…",
+    "successToast": "{{relationship}} añadido/a"
+  }
+}

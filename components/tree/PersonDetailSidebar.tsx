@@ -1,6 +1,7 @@
 'use client'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { X, ArrowUpRight, UserPlus, Fingerprint } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export type PersonDetail = {
   id: string
@@ -67,14 +68,12 @@ function formatDate(iso?: string | null) {
   if (!iso) return null
   const [y, m, d] = iso.split('-')
   if (!y) return iso
-  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][parseInt(m) - 1] ?? m
-  return d ? `${parseInt(d)} ${month} ${y}` : `${month} ${y}`
-}
-
-function kinshipLabels(gender?: string | null) {
-  if (gender === 'male')   return { child: 'Hijo de', parent: 'Padre de' }
-  if (gender === 'female') return { child: 'Hija de', parent: 'Madre de' }
-  return { child: 'Hijo/a de', parent: 'Progenitor/a de' }
+  const date = new Date(parseInt(y), parseInt(m) - 1, d ? parseInt(d) : 1)
+  return date.toLocaleDateString(undefined, { 
+    day: d ? 'numeric' : undefined, 
+    month: 'short', 
+    year: 'numeric' 
+  })
 }
 
 function personName(p: KinshipPerson) {
@@ -82,6 +81,7 @@ function personName(p: KinshipPerson) {
 }
 
 export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, onToggleSelf }: Props) {
+  const t = useTranslations('personSidebar')
   const accent = accentColor(person.gender)
   const fullName = [person.firstName, person.lastName, person.lastName2].filter(Boolean).join(' ')
   const birthFormatted = formatDate(person.birthDate)
@@ -90,7 +90,15 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
   const hasBirth = birthFormatted || person.birthPlace
   const hasDeath = !person.isAlive && (deathFormatted || person.deathPlace)
 
-  const labels = kinshipLabels(person.gender)
+  const getKinshipLabels = (gender?: string | null) => {
+    const suffix = gender === 'male' ? 'male' : gender === 'female' ? 'female' : 'unknown'
+    return {
+      child: t(`kinship.childOf_${suffix}`),
+      parent: t(`kinship.parentOf_${suffix}`),
+    }
+  }
+
+  const labels = getKinshipLabels(person.gender)
   const hasKinship = kinship && (
     kinship.parents.length > 0 || kinship.partners.length > 0 || kinship.children.length > 0
   )
@@ -174,7 +182,7 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
             <Link
               href={`/trees/${person.treeId}/persons/${person.id}`}
               className="flex items-center justify-center w-7 h-7 rounded-sm transition-colors hover:opacity-60"
-              title="View full profile"
+              title={t('viewProfile')}
               style={{
                 border: '1px solid var(--rule)',
                 color: 'var(--sepia)',
@@ -202,7 +210,7 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
         {/* Birth */}
         {hasBirth && (
           <div>
-            <span style={labelStyle}>Birth</span>
+            <span style={labelStyle}>{t('birth')}</span>
             <p style={valueStyle}>
               {[birthFormatted, person.birthPlace].filter(Boolean).join(' · ')}
             </p>
@@ -212,7 +220,7 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
         {/* Death */}
         {hasDeath && (
           <div>
-            <span style={labelStyle}>Death</span>
+            <span style={labelStyle}>{t('death')}</span>
             <p style={valueStyle}>
               {[deathFormatted, person.deathPlace].filter(Boolean).join(' · ')}
             </p>
@@ -222,7 +230,7 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
         {/* Gender */}
         {person.gender && person.gender !== 'unknown' && (
           <div>
-            <span style={labelStyle}>Gender</span>
+            <span style={labelStyle}>{t('gender')}</span>
             <p style={{ ...valueStyle, textTransform: 'capitalize' }}>{person.gender}</p>
           </div>
         )}
@@ -241,7 +249,7 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
             </div>
 
             <div>
-              <span style={labelStyle}>Biography</span>
+              <span style={labelStyle}>{t('biography')}</span>
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
@@ -283,7 +291,7 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
 
               {kinship!.partners.length > 0 && (
                 <div>
-                  <span style={labelStyle}>Pareja de</span>
+                  <span style={labelStyle}>{t('kinship.partnerOf')}</span>
                   <div className="space-y-1">
                     {kinship!.partners.map((p) => (
                       <p key={p.id} style={valueStyle}>{personName(p)}</p>
@@ -318,7 +326,7 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
               paddingTop: 12,
             }}
           >
-            No details recorded yet.
+            {t('noDetails')}
           </p>
         )}
       </div>
@@ -351,7 +359,7 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
           }}
         >
           <Fingerprint className="w-3.5 h-3.5" />
-          {person.isSelf ? 'Soy yo' : 'Marcar como yo'}
+          {person.isSelf ? t('isSelf') : t('markAsSelf')}
         </button>
         <button
           onClick={onAddRelative}
@@ -375,7 +383,7 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
           }}
         >
           <UserPlus className="w-3.5 h-3.5" />
-          Add relative
+          {t('addRelative')}
         </button>
       </div>
     </div>

@@ -1,0 +1,139 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "back": "Back",
+    "edit": "Edit",
+    "remove": "Remove",
+    "removing": "Removing…"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "appName": "Tre"
+  },
+  "dashboard": {
+    "title": "Your Lineage",
+    "subtitleEmpty": "Begin your journey into the past by documenting your family's unique story.",
+    "subtitleCount_one": "Overseeing {{count}} legacy across generations.",
+    "subtitleCount_other": "Overseeing {{count}} legacies across generations.",
+    "emptyTitle": "No Records Found",
+    "emptyDescription": "Every great history starts with a single name. Create your first family tree to begin.",
+    "explore": "Explore",
+    "defaultDescription": "A documented history of the family lineage and descendants."
+  },
+  "createTree": {
+    "trigger": "Establish New Lineage",
+    "title": "New Family Tree",
+    "description": "Enter the details of the lineage you wish to document.",
+    "nameLabel": "Tree Name",
+    "namePlaceholder": "e.g. The Harrison Dynasty",
+    "descriptionLabel": "Description (Optional)",
+    "descriptionPlaceholder": "A brief history of this branch...",
+    "submit": "Create Tree",
+    "submitting": "Establishing…",
+    "successToast": "Your new lineage has been established"
+  },
+  "editTree": {
+    "trigger": "Edit",
+    "title": "Amend Records",
+    "description": "Update the title and historical context of this lineage.",
+    "nameLabel": "Tree Name",
+    "namePlaceholder": "e.g. The Harrison Dynasty",
+    "descriptionLabel": "Description (Optional)",
+    "descriptionPlaceholder": "A brief history of this branch...",
+    "submit": "Update Records",
+    "submitting": "Amending…",
+    "successToast": "Lineage records updated"
+  },
+  "deleteTree": {
+    "trigger": "Remove",
+    "confirm": "Are you sure you want to remove this lineage from the records?",
+    "successToast": "The lineage has been removed"
+  },
+  "treePage": {
+    "addPerson": "Add person"
+  },
+  "personForm": {
+    "firstName": "First name *",
+    "lastName": "Last name",
+    "lastName2": "Second last name",
+    "gender": "Gender",
+    "genderUnknown": "Unknown",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderOther": "Other",
+    "birthDate": "Birth date",
+    "birthPlace": "Birth place",
+    "deathDate": "Death date",
+    "deathPlace": "Death place",
+    "photoUrl": "Photo URL",
+    "photoUrlPlaceholder": "https://…",
+    "bio": "Bio",
+    "successAdd": "Person added",
+    "successUpdate": "Person updated"
+  },
+  "deletePersonButton": {
+    "trigger": "Delete person",
+    "confirm": "Are you sure you want to delete this person?"
+  },
+  "personDetailPage": {
+    "backToTree": "Back to tree",
+    "editPerson": "Edit"
+  },
+  "editPersonPage": {
+    "back": "Back",
+    "title": "Edit person",
+    "submitLabel": "Save changes"
+  },
+  "newPersonPage": {
+    "back": "Back to tree",
+    "title": "Add person"
+  },
+  "personCard": {
+    "birth": "Birth",
+    "death": "Death",
+    "gender": "Gender",
+    "bio": "Biography",
+    "alive": "Alive",
+    "deceased": "Deceased"
+  },
+  "personSidebar": {
+    "noDetails": "No details recorded yet.",
+    "birth": "Birth",
+    "death": "Death",
+    "gender": "Gender",
+    "biography": "Biography",
+    "isSelf": "That's me",
+    "markAsSelf": "Mark as me",
+    "addRelative": "Add relative",
+    "viewProfile": "View full profile",
+    "kinship": {
+      "childOf_male": "Son of",
+      "childOf_female": "Daughter of",
+      "childOf_unknown": "Child of",
+      "parentOf_male": "Father of",
+      "parentOf_female": "Mother of",
+      "parentOf_unknown": "Parent of",
+      "partnerOf": "Partner of"
+    }
+  },
+  "relativeSidebar": {
+    "title": "Add Relative",
+    "of": "of {{name}}",
+    "relationship": "Relationship",
+    "partner": "Partner",
+    "child": "Child",
+    "parent": "Parent",
+    "firstName": "First name *",
+    "firstNamePlaceholder": "First name",
+    "lastName": "Last name",
+    "lastName2": "Second last name",
+    "gender": "Gender",
+    "birthDate": "Birth date",
+    "birthPlace": "Birth place",
+    "submit": "Add {{relationship}}",
+    "submitting": "Adding…",
+    "successToast": "{{relationship}} added"
+  }
+}

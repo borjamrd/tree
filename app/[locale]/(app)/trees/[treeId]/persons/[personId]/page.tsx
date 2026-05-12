@@ -5,9 +5,10 @@ import { devSession } from '@/lib/dev-session'
 import { notFound } from 'next/navigation'
 import { PersonCard } from '@/components/person/PersonCard'
 import { DeletePersonButton } from '@/components/person/DeletePersonButton'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { ArrowLeft, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { getTranslations } from 'next-intl/server'
 
 export default async function PersonDetailPage({
   params,
@@ -16,6 +17,7 @@ export default async function PersonDetailPage({
 }) {
   const { treeId, personId } = await params
   const { user } = devSession()
+  const t = await getTranslations('personDetailPage')
 
   const person = await db.query.persons.findFirst({
     where: eq(persons.id, personId),
@@ -28,7 +30,7 @@ export default async function PersonDetailPage({
     <div className="p-8 max-w-2xl mx-auto">
       <Link href={`/trees/${treeId}`} className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6">
         <ArrowLeft className="w-4 h-4" />
-        Back to tree
+        {t('backToTree')}
       </Link>
 
       <div className="flex items-start justify-between mb-6">
@@ -38,7 +40,7 @@ export default async function PersonDetailPage({
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/trees/${treeId}/persons/${personId}/edit`}>
             <Pencil className="w-4 h-4" />
-            Edit
+            {t('editPerson')}
           </Link>
         </Button>
       </div>

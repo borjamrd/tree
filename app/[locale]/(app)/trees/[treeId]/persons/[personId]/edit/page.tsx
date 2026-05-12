@@ -4,10 +4,11 @@ import { eq } from 'drizzle-orm'
 import { devSession } from '@/lib/dev-session'
 import { notFound } from 'next/navigation'
 import { updatePerson } from '@/server/persons'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { PersonForm } from '@/components/person/PersonForm'
 import type { PersonInput } from '@/lib/validations'
+import { getTranslations } from 'next-intl/server'
 
 export default async function EditPersonPage({
   params,
@@ -16,6 +17,7 @@ export default async function EditPersonPage({
 }) {
   const { treeId, personId } = await params
   const { user } = devSession()
+  const t = await getTranslations('editPersonPage')
 
   const person = await db.query.persons.findFirst({
     where: eq(persons.id, personId),
@@ -33,10 +35,10 @@ export default async function EditPersonPage({
     <div className="p-8 max-w-xl mx-auto">
       <Link href={`/trees/${treeId}/persons/${personId}`} className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6">
         <ArrowLeft className="w-4 h-4" />
-        Back
+        {t('back')}
       </Link>
 
-      <h1 className="text-xl font-semibold text-stone-800 mb-6">Edit person</h1>
+      <h1 className="text-xl font-semibold text-stone-800 mb-6">{t('title')}</h1>
 
       <PersonForm
         treeId={treeId}
@@ -54,7 +56,7 @@ export default async function EditPersonPage({
           photoUrl: person.photoUrl ?? undefined,
         }}
         action={action}
-        submitLabel="Save changes"
+        submitLabel={t('submitLabel')}
       />
     </div>
   )
