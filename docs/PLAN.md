@@ -9,7 +9,7 @@
 | Styling | Tailwind CSS v4 |
 | Database | PostgreSQL |
 | ORM | Drizzle ORM |
-| Auth | Auth.js v5 (NextAuth) |
+| Auth | Better Auth |
 | Tree UI | React Flow |
 | Package manager | pnpm |
 
@@ -48,7 +48,7 @@ tre/
 │   │   │       │       └── edit/page.tsx
 │   │   │       └── settings/page.tsx
 │   └── api/
-│       └── auth/[...nextauth]/route.ts
+│       └── auth/[...all]/route.ts
 ├── components/
 │   ├── tree/
 │   │   ├── TreeCanvas.tsx          ← React Flow wrapper
@@ -64,7 +64,8 @@ tre/
 │   ├── db/
 │   │   ├── index.ts                ← drizzle instance
 │   │   └── schema.ts               ← all table definitions
-│   ├── auth.ts                     ← Auth.js config
+│   ├── auth.ts                     ← Better Auth server config
+│   ├── auth-client.ts              ← Better Auth client config
 │   └── utils.ts
 ├── server/
 │   ├── trees.ts                    ← server actions: trees CRUD
@@ -86,7 +87,7 @@ pnpm add drizzle-orm @neondatabase/serverless
 pnpm add -D drizzle-kit
 
 # Auth
-pnpm add next-auth@beta @auth/drizzle-adapter
+pnpm add better-auth
 
 # Tree visualization
 pnpm add @xyflow/react
@@ -110,9 +111,10 @@ Create `.env.local`:
 
 ```env
 DATABASE_URL="postgres://..."
-AUTH_SECRET="..."                  # generate with: openssl rand -base64 32
-AUTH_GOOGLE_ID="..."               # optional OAuth provider
-AUTH_GOOGLE_SECRET="..."
+BETTER_AUTH_SECRET="..."           # generate with: openssl rand -base64 32
+BETTER_AUTH_URL="http://localhost:3000"
+# GITHUB_CLIENT_ID="..."
+# GITHUB_CLIENT_SECRET="..."
 ```
 
 ### Drizzle config
@@ -164,47 +166,58 @@ export const parentageTypeEnum = pgEnum('parentage_type', ['biological', 'adopti
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name'),
+// Better Auth required tables
+export const users = pgTable('user', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
   email: text('email').notNull().unique(),
-  emailVerified: timestamp('email_verified'),
+  emailVerified: boolean('email_verified').notNull(),
   image: text('image'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
 })
 
-// Auth.js required tables
-export const accounts = pgTable('accounts', {
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: text('type').notNull(),
-  provider: text('provider').notNull(),
-  providerAccountId: text('provider_account_id').notNull(),
-  refresh_token: text('refresh_token'),
-  access_token: text('access_token'),
-  expires_at: text('expires_at'),
-  token_type: text('token_type'),
+export const sessions = pgTable('session', {
+  id: text('id').primaryKey(),
+  expiresAt: timestamp('expires_at').notNull(),
+  token: text('token').notNull().unique(),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+})
+
+export const accounts = pgTable('account', {
+  id: text('id').primaryKey(),
+  accountId: text('account_id').notNull(),
+  providerId: text('provider_id').notNull(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  accessToken: text('access_token'),
+  refreshToken: text('refresh_token'),
+  idToken: text('id_token'),
+  accessTokenExpiresAt: timestamp('access_token_expires_at'),
+  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
   scope: text('scope'),
-  id_token: text('id_token'),
-  session_state: text('session_state'),
-}, (t) => [unique().on(t.provider, t.providerAccountId)])
-
-export const sessions = pgTable('sessions', {
-  sessionToken: text('session_token').primaryKey(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  expires: timestamp('expires').notNull(),
+  password: text('password'),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
 })
 
-export const verificationTokens = pgTable('verification_tokens', {
+export const verifications = pgTable('verification', {
+  id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
-  token: text('token').notNull(),
-  expires: timestamp('expires').notNull(),
-}, (t) => [unique().on(t.identifier, t.token)])
+  value: text('value').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at'),
+  updatedAt: timestamp('updated_at'),
+})
 
 // ─── Trees ───────────────────────────────────────────────────────────────────
 
 export const trees = pgTable('trees', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   description: text('description'),
   isPublic: boolean('is_public').default(false).notNull(),
@@ -303,61 +316,84 @@ pnpm db:push
 
 ## Phase 2 — Authentication
 
-### `lib/auth.ts`
+### `lib/auth.ts` (Server)
 
 ```typescript
-import NextAuth from 'next-auth'
-import { DrizzleAdapter } from '@auth/drizzle-adapter'
-import { db } from '@/lib/db'
-import { accounts, sessions, users, verificationTokens } from '@/lib/db/schema'
-import Credentials from 'next-auth/providers/credentials'
-// Optional: import Google from 'next-auth/providers/google'
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { db } from "@/lib/db";
+import * as schema from "@/lib/db/schema";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
-  session: { strategy: 'database' },
-  providers: [
-    Credentials({
-      // Implement email/password flow here
-      // Hash passwords with bcrypt
+export const auth = betterAuth({
+    database: drizzleAdapter(db, {
+        provider: "pg",
+        schema: schema,
     }),
-    // Google({ clientId: process.env.AUTH_GOOGLE_ID, clientSecret: process.env.AUTH_GOOGLE_SECRET }),
-  ],
-  pages: {
-    signIn: '/login',
-  },
+    emailAndPassword: {
+        enabled: true,
+    },
+    // socialProviders: {
+    //    github: {
+    //        clientId: process.env.GITHUB_CLIENT_ID!,
+    //        clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    //    }
+    // }
+});
+```
+
+### `lib/auth-client.ts` (Client)
+
+```typescript
+import { createAuthClient } from "better-auth/react"
+
+export const authClient = createAuthClient({
+    baseURL: process.env.BETTER_AUTH_URL
 })
 ```
 
-### `app/api/auth/[...nextauth]/route.ts`
+### `app/api/auth/[...all]/route.ts`
 
 ```typescript
-import { handlers } from '@/lib/auth'
-export const { GET, POST } = handlers
+import { auth } from "@/lib/auth";
+import { toNextJsHandler } from "better-auth/next-js";
+
+export const { POST, GET } = toNextJsHandler(auth);
 ```
 
 ### Middleware (`middleware.ts` at project root)
 
-Protect all `(app)` routes:
-
 ```typescript
-import { auth } from '@/lib/auth'
-export default auth
+import { betterFetch } from "@better-auth/fetch";
+import { NextResponse, type NextRequest } from "next/server";
+import type { Session } from "better-auth/types";
+
+export default async function authMiddleware(request: NextRequest) {
+	const { data: session } = await betterFetch<Session>(
+		"/api/auth/get-session",
+		{
+			baseURL: request.nextUrl.origin,
+			headers: {
+				//get the cookie from the request
+				cookie: request.headers.get("cookie") || "",
+			},
+		},
+	);
+
+	if (!session) {
+		return NextResponse.redirect(new URL("/login", request.url));
+	}
+	return NextResponse.next();
+}
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|login|register).*)'],
-}
+	matcher: ["/dashboard/:path*", "/trees/:path*"],
+};
 ```
 
 ### Auth pages
 
-- `app/(auth)/login/page.tsx` — login form, uses `signIn()` server action
-- `app/(auth)/register/page.tsx` — registration form, creates user + hashed password
+- `app/(auth)/login/page.tsx` — uses `authClient.signIn.email()`
+- `app/(auth)/register/page.tsx` — uses `authClient.signUp.email()`
 
 ---
 
@@ -376,6 +412,7 @@ Authorization: Every action must verify that `session.user.id` owns the resource
 ```typescript
 'use server'
 import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { trees } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -388,7 +425,9 @@ const createTreeSchema = z.object({
 })
 
 export async function createTree(input: z.infer<typeof createTreeSchema>) {
-  const session = await auth()
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
   if (!session?.user?.id) throw new Error('Unauthorized')
 
   const data = createTreeSchema.parse(input)
@@ -402,7 +441,9 @@ export async function createTree(input: z.infer<typeof createTreeSchema>) {
 }
 
 export async function getUserTrees() {
-  const session = await auth()
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
   if (!session?.user?.id) throw new Error('Unauthorized')
 
   return db.query.trees.findMany({
@@ -412,7 +453,9 @@ export async function getUserTrees() {
 }
 
 export async function deleteTree(treeId: string) {
-  const session = await auth()
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
   if (!session?.user?.id) throw new Error('Unauthorized')
 
   await db.delete(trees).where(

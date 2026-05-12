@@ -11,49 +11,59 @@ export const genderEnum = pgEnum('gender', ['male', 'female', 'other', 'unknown'
 export const unionTypeEnum = pgEnum('union_type', ['married', 'partnered', 'divorced', 'separated', 'unknown'])
 export const parentageTypeEnum = pgEnum('parentage_type', ['biological', 'adoptive', 'step', 'foster', 'unknown'])
 
-// ─── Users ───────────────────────────────────────────────────────────────────
-
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name'),
+// ─── Users & Auth (Better Auth) ──────────────────────────────────────────────
+export const users = pgTable('user', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
   email: text('email').notNull().unique(),
-  emailVerified: timestamp('email_verified'),
+  emailVerified: boolean('email_verified').notNull(),
   image: text('image'),
-  passwordHash: text('password_hash'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
 })
 
-export const accounts = pgTable('accounts', {
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: text('type').notNull(),
-  provider: text('provider').notNull(),
-  providerAccountId: text('provider_account_id').notNull(),
-  refresh_token: text('refresh_token'),
-  access_token: text('access_token'),
-  expires_at: integer('expires_at'),
-  token_type: text('token_type'),
+export const sessions = pgTable('session', {
+  id: text('id').primaryKey(),
+  expiresAt: timestamp('expires_at').notNull(),
+  token: text('token').notNull().unique(),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+})
+
+export const accounts = pgTable('account', {
+  id: text('id').primaryKey(),
+  accountId: text('account_id').notNull(),
+  providerId: text('provider_id').notNull(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  accessToken: text('access_token'),
+  refreshToken: text('refresh_token'),
+  idToken: text('id_token'),
+  accessTokenExpiresAt: timestamp('access_token_expires_at'),
+  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
   scope: text('scope'),
-  id_token: text('id_token'),
-  session_state: text('session_state'),
-}, (t) => [unique().on(t.provider, t.providerAccountId)])
-
-export const sessions = pgTable('sessions', {
-  sessionToken: text('session_token').primaryKey(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  expires: timestamp('expires').notNull(),
+  password: text('password'),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
 })
 
-export const verificationTokens = pgTable('verification_tokens', {
+export const verifications = pgTable('verification', {
+  id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
-  token: text('token').notNull(),
-  expires: timestamp('expires').notNull(),
-}, (t) => [unique().on(t.identifier, t.token)])
+  value: text('value').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at'),
+  updatedAt: timestamp('updated_at'),
+})
+
 
 // ─── Trees ───────────────────────────────────────────────────────────────────
 
 export const trees = pgTable('trees', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   description: text('description'),
   isPublic: boolean('is_public').default(false).notNull(),
