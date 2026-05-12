@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { TreePine, Calendar, ArrowRight, Plus } from 'lucide-react'
 import { CreateTreeForm } from '@/components/tree/CreateTreeForm'
 import { DeleteTreeButton } from '@/components/tree/DeleteTreeButton'
+import { EditTreeForm } from '@/components/tree/EditTreeForm'
 
 export default async function DashboardPage() {
   const trees = await getUserTrees()
@@ -49,6 +50,16 @@ export default async function DashboardPage() {
                 style={{ animationDelay: `${(index + 1) * 100}ms` }}
               >
                 <div className="relative bg-white border border-rule/60 p-8 rounded-sm shadow-[0_4px_20px_-10px_rgba(28,21,16,0.1)] transition-all duration-500 hover:shadow-[0_15px_40px_-15px_rgba(28,21,16,0.15)] hover:-translate-y-1 overflow-hidden">
+                  {/* Card Actions */}
+                  <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                    <EditTreeForm 
+                      treeId={tree.id} 
+                      defaultName={tree.name} 
+                      defaultDescription={tree.description} 
+                    />
+                    <DeleteTreeButton treeId={tree.id} />
+                  </div>
+
                   {/* Card Ornament */}
                   <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none opacity-10 translate-x-6 -translate-y-6">
                     <TreePine className="w-full h-full text-gold" />
@@ -56,7 +67,7 @@ export default async function DashboardPage() {
                   
                   <Link href={`/trees/${tree.id}`} className="block">
                     <div className="mb-6">
-                      <h2 className="text-2xl font-display text-ink group-hover:text-sepia transition-colors duration-300">
+                      <h2 className="text-2xl font-display text-ink group-hover:text-sepia transition-colors duration-300 pr-12">
                         {tree.name}
                       </h2>
                       <div className="h-px w-8 bg-gold/40 mt-2 group-hover:w-16 transition-all duration-500" />
@@ -78,10 +89,6 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                   </Link>
-                  
-                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <DeleteTreeButton treeId={tree.id} />
-                  </div>
                 </div>
               </div>
             ))}
