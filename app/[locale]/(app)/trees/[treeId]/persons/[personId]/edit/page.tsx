@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 import { persons } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
-import { devSession } from '@/lib/dev-session'
+import { requireUser } from '@/lib/get-session'
 import { notFound } from 'next/navigation'
 import { updatePerson } from '@/server/persons'
 import { Link } from '@/i18n/navigation'
@@ -16,7 +16,7 @@ export default async function EditPersonPage({
   params: Promise<{ treeId: string; personId: string }>
 }) {
   const { treeId, personId } = await params
-  const { user } = devSession()
+  const user = await requireUser()
   const t = await getTranslations('editPersonPage')
 
   const person = await db.query.persons.findFirst({

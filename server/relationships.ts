@@ -1,5 +1,5 @@
 'use server'
-import { devSession } from '@/lib/dev-session'
+import { requireUser } from '@/lib/get-session'
 import { db } from '@/lib/db'
 import { unions, parentage, trees, persons } from '@/lib/db/schema'
 import { eq, and, or, inArray } from 'drizzle-orm'
@@ -102,7 +102,7 @@ export async function addRelative(
   anchorPosition: { x: number; y: number }
 ): Promise<Result<{ personId: string }>> {
   try {
-    const { user } = devSession()
+    const user = await requireUser()
     await verifyTreeOwnership(treeId, user.id)
 
     const parsed = sanitizePerson(personSchema.parse(personData))
@@ -178,7 +178,7 @@ export async function createUnion(
   posX = '0',
   posY = '0',
 ) {
-  const { user } = devSession()
+  const user = await requireUser()
   await verifyTreeOwnership(treeId, user.id)
 
   const [union] = await db.insert(unions).values({ treeId, person1Id, person2Id, type, posX, posY }).returning()
@@ -197,21 +197,21 @@ export async function updateUnion(
     posY: string
   }>
 ) {
-  const { user } = devSession()
+  const user = await requireUser()
   const union = await verifyUnionOwnership(unionId, user.id)
   await db.update(unions).set(data).where(eq(unions.id, unionId))
   revalidatePath(`/trees/${union.treeId}`)
 }
 
 export async function updateUnionPosition(unionId: string, x: number, y: number) {
-  const { user } = devSession()
+  const user = await requireUser()
   const union = await verifyUnionOwnership(unionId, user.id)
   await db.update(unions).set({ posX: String(x), posY: String(y) }).where(eq(unions.id, unionId))
   revalidatePath(`/trees/${union.treeId}`)
 }
 
 export async function deleteUnion(unionId: string) {
-  const { user } = devSession()
+  const user = await requireUser()
   const union = await verifyUnionOwnership(unionId, user.id)
   await db.delete(unions).where(eq(unions.id, unionId))
   revalidatePath(`/trees/${union.treeId}`)
@@ -223,7 +223,7 @@ export async function addChild(
   type: 'biological' | 'adoptive' | 'step' | 'foster' | 'unknown' = 'biological'
 ): Promise<Result> {
   try {
-    const { user } = devSession()
+    const user = await requireUser()
     const union = await verifyUnionOwnership(unionId, user.id)
 
     const existing = await db.query.parentage.findFirst({
@@ -240,7 +240,7 @@ export async function addChild(
 }
 
 export async function removeChild(parentageId: string) {
-  const { user } = devSession()
+  const user = await requireUser()
   const entry = await db.query.parentage.findFirst({
     where: eq(parentage.id, parentageId),
     with: { union: { with: { tree: true } } },
@@ -256,7 +256,7 @@ export async function addExistingChild(
   childId: string,
   unionPos: { x: number; y: number }
 ) {
-  const { user } = devSession()
+  const user = await requireUser()
   await verifyTreeOwnership(treeId, user.id)
 
   const [union] = await db.insert(unions).values({
@@ -279,7 +279,7 @@ export async function linkPersons(
   unionPos: { x: number; y: number }
 ): Promise<Result> {
   try {
-  const { user } = devSession()
+  const user = await requireUser()
   await verifyTreeOwnership(treeId, user.id)
 
   // Load all unions (with their children) for both persons
@@ -376,7 +376,7 @@ export async function linkPersons(
 }
 
 export async function getTreeRelationships(treeId: string) {
-  const { user } = devSession()
+  const user = await requireUser()
   await verifyTreeOwnership(treeId, user.id)
 
   const [treeUnions, treeParentage] = await Promise.all([

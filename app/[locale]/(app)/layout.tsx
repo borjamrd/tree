@@ -1,11 +1,11 @@
-import { devSession } from "@/lib/dev-session";
+import { getSession } from "@/lib/get-session";
 import { Link } from "@/i18n/navigation";
 import { TreePine, LayoutDashboard } from "lucide-react";
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = devSession();
-  const t = useTranslations('nav');
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+  const t = await getTranslations('nav');
 
   return (
     <div className="flex h-screen bg-stone-50">
@@ -29,7 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         <div className="mt-auto border-t border-stone-100 pt-4">
           <p className="text-xs text-stone-500 truncate px-3">
-            {session.user.name}
+            {session?.user.name || 'User'}
           </p>
         </div>
       </aside>
