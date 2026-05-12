@@ -2,7 +2,7 @@
 import { devSession } from '@/lib/dev-session'
 import { db } from '@/lib/db'
 import { unions, parentage, trees, persons } from '@/lib/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, or } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { personSchema, type PersonInput } from '@/lib/validations'
 
@@ -26,6 +26,74 @@ function sanitizePerson(input: PersonInput) {
   }
 }
 
+const NODE_W  = 160  // PersonNode width (w-40)
+const UNION_W = 16   // UnionNode width (w-4)
+const H_GAP   = 40   // horizontal gap between sibling nodes
+const V_CHILD = 220  // vertical distance person → child
+const V_UNION = 100  // vertical distance person → union node
+// offset so the union handle (at union center) aligns with the person handle (at person center)
+const CENTER  = (NODE_W - UNION_W) / 2  // 72
+
+async function computePosition(
+  treeId: string,
+  anchorPersonId: string,
+  type: RelationshipType,
+  anchor: { x: number; y: number }
+): Promise<{ personX: number; personY: number; unionX: number; unionY: number }> {
+  if (type === 'partner') {
+    const person2X = anchor.x + NODE_W + H_GAP
+    // union centered between both persons' centers
+    const unionCenterX = anchor.x + NODE_W / 2 + (NODE_W + H_GAP) / 2
+    return {
+      personX: person2X,
+      personY: anchor.y,
+      unionX:  unionCenterX - UNION_W / 2,
+      unionY:  anchor.y + V_UNION,
+    }
+  }
+
+  if (type === 'child') {
+    // Find all existing children across every union this person is part of
+    const parentUnions = await db.query.unions.findMany({
+      where: and(
+        eq(unions.treeId, treeId),
+        or(eq(unions.person1Id, anchorPersonId), eq(unions.person2Id, anchorPersonId))
+      ),
+      with: { children: { with: { child: true } } },
+    })
+
+    const siblings = parentUnions.flatMap(u => u.children.map(p => p.child))
+
+    if (siblings.length > 0) {
+      const xs = siblings.map(s => Number(s.posX ?? 0))
+      const ys = siblings.map(s => Number(s.posY ?? 0))
+      const siblingY = Math.round(ys.reduce((a, b) => a + b, 0) / ys.length)
+      const childX   = Math.max(...xs) + NODE_W + H_GAP
+      return {
+        personX: childX,
+        personY: siblingY,
+        unionX:  childX + CENTER,
+        unionY:  siblingY - V_UNION,
+      }
+    }
+
+    return {
+      personX: anchor.x,
+      personY: anchor.y + V_CHILD,
+      unionX:  anchor.x + CENTER,
+      unionY:  anchor.y + V_UNION,
+    }
+  }
+
+  // type === 'parent'
+  return {
+    personX: anchor.x,
+    personY: anchor.y - V_CHILD,
+    unionX:  anchor.x + CENTER,
+    unionY:  anchor.y - V_UNION,
+  }
+}
+
 export async function addRelative(
   treeId: string,
   anchorPersonId: string,
@@ -38,57 +106,42 @@ export async function addRelative(
     await verifyTreeOwnership(treeId, user.id)
 
     const parsed = sanitizePerson(personSchema.parse(personData))
-
-    // Position new node relative to anchor
-    const offset = {
-      partner: { x: 220, y: 0 },
-      child:   { x: 0,   y: 220 },
-      parent:  { x: 0,   y: -220 },
-    }[relationshipType]
+    const pos = await computePosition(treeId, anchorPersonId, relationshipType, anchorPosition)
 
     const [newPerson] = await db.insert(persons).values({
       ...parsed,
       treeId,
-      posX: String(anchorPosition.x + offset.x),
-      posY: String(anchorPosition.y + offset.y),
+      posX: String(pos.personX),
+      posY: String(pos.personY),
     }).returning()
 
     if (relationshipType === 'partner') {
-      // union node sits between the two persons
-      const unionX = (anchorPosition.x + anchorPosition.x + offset.x) / 2
-      const unionY = anchorPosition.y + 80
       await db.insert(unions).values({
         treeId,
         person1Id: anchorPersonId,
         person2Id: newPerson.id,
         type: 'unknown',
-        posX: String(unionX),
-        posY: String(unionY),
+        posX: String(pos.unionX),
+        posY: String(pos.unionY),
       })
     } else if (relationshipType === 'child') {
-      // anchor is the parent — create a single-parent union then add the child
-      const unionX = anchorPosition.x
-      const unionY = anchorPosition.y + 100
       const [union] = await db.insert(unions).values({
         treeId,
         person1Id: anchorPersonId,
         person2Id: null,
         type: 'unknown',
-        posX: String(unionX),
-        posY: String(unionY),
+        posX: String(pos.unionX),
+        posY: String(pos.unionY),
       }).returning()
       await db.insert(parentage).values({ unionId: union.id, childId: newPerson.id, type: 'biological' })
     } else {
-      // parent: new person is the parent, anchor is the child
-      const unionX = anchorPosition.x
-      const unionY = anchorPosition.y - 100
       const [union] = await db.insert(unions).values({
         treeId,
         person1Id: newPerson.id,
         person2Id: null,
         type: 'unknown',
-        posX: String(unionX),
-        posY: String(unionY),
+        posX: String(pos.unionX),
+        posY: String(pos.unionY),
       }).returning()
       await db.insert(parentage).values({ unionId: union.id, childId: anchorPersonId, type: 'biological' })
     }

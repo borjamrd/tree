@@ -57,7 +57,8 @@ export function treeToFlow(
       id: `e-p1-${u.id}`,
       source: u.person1Id,
       target: `union-${u.id}`,
-      type: 'smoothstep',
+      targetHandle: 'p1',
+      type: 'deletable',
     })
 
     if (u.person2Id) {
@@ -65,7 +66,8 @@ export function treeToFlow(
         id: `e-p2-${u.id}`,
         source: u.person2Id,
         target: `union-${u.id}`,
-        type: 'smoothstep',
+        targetHandle: 'p2',
+        type: 'deletable',
       })
     }
   }
@@ -75,7 +77,7 @@ export function treeToFlow(
       id: `e-par-${par.id}`,
       source: `union-${par.unionId}`,
       target: par.childId,
-      type: 'smoothstep',
+      type: 'deletable',
     })
   }
 

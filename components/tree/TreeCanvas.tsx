@@ -15,14 +15,19 @@ import '@xyflow/react/dist/style.css'
 import { useRouter } from 'next/navigation'
 import { PersonNode } from './PersonNode'
 import { UnionNode } from './UnionNode'
+import { DeletableEdge } from './DeletableEdge'
 import { RelativeSidebar } from './RelativeSidebar'
 import { treeToFlow } from '@/lib/tree-transform'
 import { updatePersonPosition } from '@/server/persons'
-import { createUnion, addChild } from '@/server/relationships'
+import { createUnion, addChild, deleteUnion, removeChild } from '@/server/relationships'
 
 const nodeTypes = {
   person: PersonNode,
   union: UnionNode,
+}
+
+const edgeTypes = {
+  deletable: DeletableEdge,
 }
 
 type Props = {
@@ -77,6 +82,22 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
       : n
   )
 
+  const handleDeleteEdge = useCallback((edgeId: string) => {
+    startTransition(async () => {
+      if (edgeId.startsWith('e-par-')) {
+        await removeChild(edgeId.replace('e-par-', ''))
+      } else {
+        await deleteUnion(edgeId.replace(/^e-p[12]-/, ''))
+      }
+      router.refresh()
+    })
+  }, [router])
+
+  const edgesWithDelete = edges.map((e) => ({
+    ...e,
+    data: { ...e.data, onDelete: () => handleDeleteEdge(e.id) },
+  }))
+
   const onNodesChange: OnNodesChange = useCallback((changes: NodeChange[]) => {
     setNodes((nds) => applyNodeChanges(changes, nds))
 
@@ -120,10 +141,11 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
     <div className="h-full w-full relative">
       <ReactFlow
         nodes={nodesWithCallback}
-        edges={edges}
+        edges={edgesWithDelete}
         onNodesChange={onNodesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
       >
         <Controls />

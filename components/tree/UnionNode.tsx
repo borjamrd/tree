@@ -22,8 +22,8 @@ export function UnionNode({ id, data }: NodeProps) {
   return (
     <div className="relative group">
       <div className="w-4 h-4 rounded-full bg-stone-400 border-2 border-white shadow flex items-center justify-center">
-        <Handle type="target" position={Position.Left} className="opacity-0" />
-        <Handle type="target" position={Position.Right} className="opacity-0" />
+        <Handle type="target" id="p1" position={Position.Top} className="opacity-0" />
+        <Handle type="target" id="p2" position={Position.Top} className="opacity-0" />
         <Handle type="source" position={Position.Bottom} className="opacity-0" />
       </div>
 
