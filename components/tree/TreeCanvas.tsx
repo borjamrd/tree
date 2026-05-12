@@ -23,7 +23,7 @@ import { RelativeSidebar } from './RelativeSidebar'
 import { PersonDetailSidebar, type PersonDetail } from './PersonDetailSidebar'
 import { treeToFlow } from '@/lib/tree-transform'
 import { updatePersonPosition } from '@/server/persons'
-import { linkPersons, addExistingChild, addChild, deleteUnion, removeChild } from '@/server/relationships'
+import { linkPersons, addExistingChild, addChild, deleteUnion, removeChild, updateUnionPosition } from '@/server/relationships'
 
 const nodeTypes = {
   person: PersonNode,
@@ -119,10 +119,13 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
     )
     if (positionChange && positionChange.type === 'position' && positionChange.position) {
       const { id, position } = positionChange
-      if (id.startsWith('union-')) return
       clearTimeout(positionTimer)
       positionTimer = setTimeout(() => {
-        updatePersonPosition(id, position!.x, position!.y)
+        if (id.startsWith('union-')) {
+          updateUnionPosition(id.replace('union-', ''), position!.x, position!.y)
+        } else {
+          updatePersonPosition(id, position!.x, position!.y)
+        }
       }, 500)
     }
   }, [setNodes])

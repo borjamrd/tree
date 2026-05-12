@@ -203,6 +203,13 @@ export async function updateUnion(
   revalidatePath(`/trees/${union.treeId}`)
 }
 
+export async function updateUnionPosition(unionId: string, x: number, y: number) {
+  const { user } = devSession()
+  const union = await verifyUnionOwnership(unionId, user.id)
+  await db.update(unions).set({ posX: String(x), posY: String(y) }).where(eq(unions.id, unionId))
+  revalidatePath(`/trees/${union.treeId}`)
+}
+
 export async function deleteUnion(unionId: string) {
   const { user } = devSession()
   const union = await verifyUnionOwnership(unionId, user.id)
