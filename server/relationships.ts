@@ -26,12 +26,14 @@ export async function createUnion(
   treeId: string,
   person1Id: string,
   person2Id: string | null,
-  type: 'married' | 'partnered' | 'divorced' | 'separated' | 'unknown' = 'unknown'
+  type: 'married' | 'partnered' | 'divorced' | 'separated' | 'unknown' = 'unknown',
+  posX = '0',
+  posY = '0',
 ) {
   const { user } = devSession()
   await verifyTreeOwnership(treeId, user.id)
 
-  const [union] = await db.insert(unions).values({ treeId, person1Id, person2Id, type }).returning()
+  const [union] = await db.insert(unions).values({ treeId, person1Id, person2Id, type, posX, posY }).returning()
   revalidatePath(`/trees/${treeId}`)
   return union
 }

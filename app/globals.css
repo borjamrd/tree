@@ -66,3 +66,24 @@ body {
   animation: scaleIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
 }
+
+@media print {
+  /* Hide everything except portrait cards */
+  body > *:not(.print-cards) { display: none !important; }
+
+  .print-cards {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: white;
+  }
+
+  .print-card {
+    break-inside: avoid;
+    border: 1px solid #e7e5e4;
+    border-radius: 12px;
+    padding: 1.25rem;
+    font-family: Georgia, serif;
+  }
+}

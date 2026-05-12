@@ -6,6 +6,10 @@ import { notFound, redirect } from 'next/navigation'
 import { updatePerson } from '@/server/persons'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 export default async function EditPersonPage({
   params,
@@ -39,31 +43,33 @@ export default async function EditPersonPage({
 
   return (
     <div className="p-8 max-w-xl mx-auto">
-      <Link
-        href={`/trees/${treeId}/persons/${personId}`}
-        className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6"
-      >
+      <Link href={`/trees/${treeId}/persons/${personId}`} className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6">
         <ArrowLeft className="w-4 h-4" />
         Back
       </Link>
 
       <h1 className="text-xl font-semibold text-stone-800 mb-6">Edit person</h1>
 
-      <form action={action} className="space-y-4">
+      <form action={action} className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">First name *</label>
-            <input name="firstName" defaultValue={person.firstName} required className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
+          <div className="space-y-1.5">
+            <Label htmlFor="firstName">First name *</Label>
+            <Input id="firstName" name="firstName" defaultValue={person.firstName} required />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">Last name</label>
-            <input name="lastName" defaultValue={person.lastName ?? ''} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
+          <div className="space-y-1.5">
+            <Label htmlFor="lastName">Last name</Label>
+            <Input id="lastName" name="lastName" defaultValue={person.lastName ?? ''} />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">Gender</label>
-          <select name="gender" defaultValue={person.gender} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+        <div className="space-y-1.5">
+          <Label htmlFor="gender">Gender</Label>
+          <select
+            id="gender"
+            name="gender"
+            defaultValue={person.gender}
+            className="flex h-9 w-full rounded-lg border border-stone-200 bg-white px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+          >
             <option value="unknown">Unknown</option>
             <option value="male">Male</option>
             <option value="female">Female</option>
@@ -72,38 +78,33 @@ export default async function EditPersonPage({
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">Birth date</label>
-            <input name="birthDate" type="date" defaultValue={person.birthDate ?? ''} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
+          <div className="space-y-1.5">
+            <Label htmlFor="birthDate">Birth date</Label>
+            <Input id="birthDate" name="birthDate" type="date" defaultValue={person.birthDate ?? ''} />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">Birth place</label>
-            <input name="birthPlace" defaultValue={person.birthPlace ?? ''} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
+          <div className="space-y-1.5">
+            <Label htmlFor="birthPlace">Birth place</Label>
+            <Input id="birthPlace" name="birthPlace" defaultValue={person.birthPlace ?? ''} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">Death date</label>
-            <input name="deathDate" type="date" defaultValue={person.deathDate ?? ''} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
+          <div className="space-y-1.5">
+            <Label htmlFor="deathDate">Death date</Label>
+            <Input id="deathDate" name="deathDate" type="date" defaultValue={person.deathDate ?? ''} />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">Death place</label>
-            <input name="deathPlace" defaultValue={person.deathPlace ?? ''} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
+          <div className="space-y-1.5">
+            <Label htmlFor="deathPlace">Death place</Label>
+            <Input id="deathPlace" name="deathPlace" defaultValue={person.deathPlace ?? ''} />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">Bio</label>
-          <textarea name="bio" rows={3} defaultValue={person.bio ?? ''} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 resize-none" />
+        <div className="space-y-1.5">
+          <Label htmlFor="bio">Bio</Label>
+          <Textarea id="bio" name="bio" rows={3} defaultValue={person.bio ?? ''} />
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-stone-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-stone-700 transition-colors"
-        >
-          Save changes
-        </button>
+        <Button type="submit" className="w-full">Save changes</Button>
       </form>
     </div>
   )

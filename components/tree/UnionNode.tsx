@@ -1,12 +1,39 @@
 'use client'
-import { Handle, Position } from '@xyflow/react'
+import { Handle, Position, useReactFlow } from '@xyflow/react'
+import type { NodeProps } from '@xyflow/react'
+import { X } from 'lucide-react'
+import { deleteUnion } from '@/server/relationships'
+import { useRouter } from 'next/navigation'
+import { useTransition } from 'react'
 
-export function UnionNode() {
+export function UnionNode({ id, data }: NodeProps) {
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+  const unionId = id.replace('union-', '')
+
+  function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation()
+    startTransition(async () => {
+      await deleteUnion(unionId)
+      router.refresh()
+    })
+  }
+
   return (
-    <div className="w-3 h-3 rounded-full bg-stone-400 border-2 border-white shadow">
-      <Handle type="target" position={Position.Left} />
-      <Handle type="target" position={Position.Right} />
-      <Handle type="source" position={Position.Bottom} />
+    <div className="relative group">
+      <div className="w-4 h-4 rounded-full bg-stone-400 border-2 border-white shadow flex items-center justify-center">
+        <Handle type="target" position={Position.Left} className="opacity-0" />
+        <Handle type="target" position={Position.Right} className="opacity-0" />
+        <Handle type="source" position={Position.Bottom} className="opacity-0" />
+      </div>
+
+      <button
+        onClick={handleDelete}
+        disabled={pending}
+        className="absolute -top-2 -right-2 w-4 h-4 bg-red-400 rounded-full items-center justify-center hidden group-hover:flex hover:bg-red-500 transition-colors"
+      >
+        <X className="w-2.5 h-2.5 text-white" />
+      </button>
     </div>
   )
 }
