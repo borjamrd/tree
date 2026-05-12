@@ -1,12 +1,14 @@
 import { getUserTrees } from '@/server/trees'
-import { Link } from '@/i18n/navigation'
-import { TreePine, Calendar, ArrowRight, Plus } from 'lucide-react'
+import { Link, useRouter } from '@/i18n/navigation'
+import { TreePine, Calendar, ArrowRight, Plus, LogOut } from 'lucide-react'
 import { CreateTreeForm } from '@/components/tree/CreateTreeForm'
 import { DeleteTreeButton } from '@/components/tree/DeleteTreeButton'
 import { EditTreeForm } from '@/components/tree/EditTreeForm'
 import { getTranslations } from 'next-intl/server'
+import { SignOutButton } from '@/components/auth/SignOutButton'
 
 export default async function DashboardPage() {
+
   const trees = await getUserTrees()
   const t = await getTranslations('dashboard')
 
@@ -18,7 +20,11 @@ export default async function DashboardPage() {
       />
 
       <div className="relative max-w-6xl mx-auto px-6 py-12 md:py-20">
+        <div className="flex justify-end mb-4">
+          <SignOutButton />
+        </div>
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 animate-fade-up">
+
           <div>
             <h1 className="text-5xl md:text-6xl font-display text-ink tracking-tight">
               {t('title')}

@@ -134,5 +134,29 @@
     "submit": "Add {relationship}",
     "submitting": "Adding…",
     "successToast": "{relationship} added"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "subtitle": "to your family tree",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "noAccount": "No account?",
+      "registerLink": "Register",
+      "google": "Sign in with Google"
+    },
+    "register": {
+      "title": "Create account",
+      "subtitle": "start your family tree",
+      "name": "Name",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Create account",
+      "submitting": "Creating…",
+      "alreadyHaveAccount": "Already have an account?",
+      "loginLink": "Sign in"
+    }
   }
 }

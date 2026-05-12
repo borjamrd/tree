@@ -1,5 +1,5 @@
 'use server'
-import { devSession } from '@/lib/dev-session'
+import { requireUser } from '@/lib/get-session'
 import { db } from '@/lib/db'
 import { persons, trees } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -47,7 +47,7 @@ export async function createPerson(
   input: PersonInput
 ): Promise<Result<typeof persons.$inferSelect>> {
   try {
-    const { user } = devSession()
+    const user = await requireUser()
     await verifyTreeOwnership(treeId, user.id)
     const data = sanitize(personSchema.parse(input))
     const [person] = await db.insert(persons).values({ ...data, treeId }).returning()
@@ -63,7 +63,7 @@ export async function updatePerson(
   input: Partial<PersonInput>
 ): Promise<Result> {
   try {
-    const { user } = devSession()
+    const user = await requireUser()
     const person = await verifyPersonOwnership(personId, user.id)
     await db.update(persons).set(sanitize(input as PersonInput)).where(eq(persons.id, personId))
     revalidatePath(`/trees/${person.treeId}`)
@@ -76,7 +76,7 @@ export async function updatePerson(
 
 export async function deletePerson(personId: string): Promise<Result> {
   try {
-    const { user } = devSession()
+    const user = await requireUser()
     const person = await verifyPersonOwnership(personId, user.id)
     await db.delete(persons).where(eq(persons.id, personId))
     revalidatePath(`/trees/${person.treeId}`)
@@ -87,8 +87,8 @@ export async function deletePerson(personId: string): Promise<Result> {
 }
 
 export async function updatePersonPosition(personId: string, x: number, y: number) {
-  const { user } = devSession()
   try {
+    const user = await requireUser()
     await verifyPersonOwnership(personId, user.id)
     await db.update(persons)
       .set({ posX: String(x), posY: String(y) })
@@ -98,7 +98,7 @@ export async function updatePersonPosition(personId: string, x: number, y: numbe
 
 export async function setPersonAsSelf(personId: string, isSelf: boolean): Promise<Result> {
   try {
-    const { user } = devSession()
+    const user = await requireUser()
     const person = await verifyPersonOwnership(personId, user.id)
     const treeId = person.treeId
     await db.update(persons).set({ isSelf: false }).where(eq(persons.treeId, treeId))
@@ -113,7 +113,8 @@ export async function setPersonAsSelf(personId: string, isSelf: boolean): Promis
 }
 
 export async function getTreePersons(treeId: string) {
-  const { user } = devSession()
+  const user = await requireUser()
   await verifyTreeOwnership(treeId, user.id)
   return db.query.persons.findMany({ where: eq(persons.treeId, treeId) })
 }
+

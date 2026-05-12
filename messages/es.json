@@ -134,5 +134,29 @@
     "submit": "Añadir {relationship}",
     "submitting": "Añadiendo…",
     "successToast": "{relationship} añadido/a"
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión",
+      "subtitle": "en tu árbol genealógico",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "submit": "Entrar",
+      "submitting": "Entrando…",
+      "noAccount": "¿No tienes cuenta?",
+      "registerLink": "Regístrate",
+      "google": "Entrar con Google"
+    },
+    "register": {
+      "title": "Crear cuenta",
+      "subtitle": "comienza tu linaje",
+      "name": "Nombre",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "submit": "Crear cuenta",
+      "submitting": "Creando…",
+      "alreadyHaveAccount": "¿Ya tienes cuenta?",
+      "loginLink": "Inicia sesión"
+    }
   }
 }
