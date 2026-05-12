@@ -11,10 +11,12 @@ export function DeleteTreeButton({ treeId }: { treeId: string }) {
   const [pending, startTransition] = useTransition()
 
   function handleDelete() {
+    if (!confirm('Are you sure you want to remove this lineage from the records?')) return
+
     startTransition(async () => {
       const result = await deleteTree(treeId)
       if (result.success) {
-        toast.success('Tree deleted')
+        toast.success('The lineage has been removed')
         router.refresh()
       } else {
         toast.error(result.error)
@@ -26,12 +28,12 @@ export function DeleteTreeButton({ treeId }: { treeId: string }) {
     <Button
       variant="ghost"
       size="sm"
-      className="text-stone-400 hover:text-red-500 -ml-2"
+      className="text-sepia/40 hover:text-red-700 hover:bg-red-50 transition-all duration-300 rounded-sm"
       onClick={handleDelete}
       disabled={pending}
     >
       <Trash2 className="w-3.5 h-3.5" />
-      {pending ? 'Deleting…' : 'Delete'}
+      {pending ? 'Removing…' : 'Remove'}
     </Button>
   )
 }
