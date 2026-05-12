@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Crimson_Pro } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -28,7 +29,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${cormorant.variable} ${crimson.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Toaster position="bottom-right" richColors />
+      </body>
     </html>
   );
 }

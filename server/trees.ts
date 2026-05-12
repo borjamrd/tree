@@ -3,24 +3,22 @@ import { devSession } from '@/lib/dev-session'
 import { db } from '@/lib/db'
 import { trees } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
-import { z } from 'zod'
+import { treeSchema, type TreeInput } from '@/lib/validations'
 import { revalidatePath } from 'next/cache'
 
-const createTreeSchema = z.object({
-  name: z.string().min(1).max(100),
-  description: z.string().max(500).optional(),
-})
+type Result<T = void> = { success: true; data?: T } | { success: false; error: string }
 
-export async function createTree(input: z.infer<typeof createTreeSchema>) {
-  const session = devSession()
-  const data = createTreeSchema.parse(input)
-  const [tree] = await db.insert(trees).values({
-    ...data,
-    userId: session.user.id,
-  }).returning()
-
-  revalidatePath('/dashboard')
-  return tree
+export async function createTree(input: TreeInput): Promise<Result<typeof trees.$inferSelect>> {
+  try {
+    const { user } = devSession()
+    const data = treeSchema.parse(input)
+    const [tree] = await db.insert(trees).values({ ...data, userId: user.id }).returning()
+    revalidatePath('/dashboard')
+    return { success: true, data: tree }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return { success: false, error: msg }
+  }
 }
 
 export async function getUserTrees() {
@@ -38,20 +36,27 @@ export async function getTree(treeId: string) {
   })
 }
 
-export async function updateTree(treeId: string, input: Partial<z.infer<typeof createTreeSchema>>) {
-  const { user } = devSession()
-  await db.update(trees)
-    .set({ ...input, updatedAt: new Date() })
-    .where(and(eq(trees.id, treeId), eq(trees.userId, user.id)))
-
-  revalidatePath('/dashboard')
-  revalidatePath(`/trees/${treeId}`)
+export async function updateTree(treeId: string, input: Partial<TreeInput>): Promise<Result> {
+  try {
+    const { user } = devSession()
+    await db.update(trees)
+      .set({ ...input, updatedAt: new Date() })
+      .where(and(eq(trees.id, treeId), eq(trees.userId, user.id)))
+    revalidatePath('/dashboard')
+    revalidatePath(`/trees/${treeId}`)
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Failed to update tree' }
+  }
 }
 
-export async function deleteTree(treeId: string) {
-  const { user } = devSession()
-  await db.delete(trees).where(
-    and(eq(trees.id, treeId), eq(trees.userId, user.id))
-  )
-  revalidatePath('/dashboard')
+export async function deleteTree(treeId: string): Promise<Result> {
+  try {
+    const { user } = devSession()
+    await db.delete(trees).where(and(eq(trees.id, treeId), eq(trees.userId, user.id)))
+    revalidatePath('/dashboard')
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Failed to delete tree' }
+  }
 }
