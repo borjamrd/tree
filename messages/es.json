@@ -15,8 +15,7 @@
   "dashboard": {
     "title": "Tu linaje",
     "subtitleEmpty": "Empieza tu viaje al pasado documentando la historia única de tu familia.",
-    "subtitleCount_one": "Gestionando {{count}} legado a través de las generaciones.",
-    "subtitleCount_other": "Gestionando {{count}} legados a través de las generaciones.",
+    "subtitleCount": "{count, plural, one {Gestionando # legado a través de las generaciones.} other {Gestionando # legados a través de las generaciones.}}",
     "emptyTitle": "Sin registros",
     "emptyDescription": "Toda gran historia empieza con un nombre. Crea tu primer árbol genealógico para comenzar.",
     "explore": "Explorar",
@@ -120,7 +119,7 @@
   },
   "relativeSidebar": {
     "title": "Añadir familiar",
-    "of": "de {{name}}",
+    "of": "de {name}",
     "relationship": "Relación",
     "partner": "Pareja",
     "child": "Hijo/a",
@@ -132,8 +131,8 @@
     "gender": "Género",
     "birthDate": "Fecha de nacimiento",
     "birthPlace": "Lugar de nacimiento",
-    "submit": "Añadir {{relationship}}",
+    "submit": "Añadir {relationship}",
     "submitting": "Añadiendo…",
-    "successToast": "{{relationship}} añadido/a"
+    "successToast": "{relationship} añadido/a"
   }
 }
