@@ -86,8 +86,10 @@
     "submitLabel": "Save changes"
   },
   "newPersonPage": {
-    "back": "Back to tree",
-    "title": "Add person"
+    "backToTree": "Return to Tree",
+    "newMember": "New Member",
+    "title": "Add Person",
+    "addPerson": "Record Entry"
   },
   "personCard": {
     "birth": "Birth",

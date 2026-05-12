@@ -86,8 +86,10 @@
     "submitLabel": "Guardar cambios"
   },
   "newPersonPage": {
-    "back": "Volver al árbol",
-    "title": "Añadir persona"
+    "backToTree": "Volver al árbol",
+    "newMember": "Nuevo Miembro",
+    "title": "Añadir Persona",
+    "addPerson": "Registrar Entrada"
   },
   "personCard": {
     "birth": "Nacimiento",
