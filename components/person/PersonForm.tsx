@@ -22,6 +22,7 @@ type Props = {
 
 export function PersonForm({ treeId, personId, defaultValues, action, submitLabel, redirectTo }: Props) {
   const t = useTranslations('personForm')
+  const tCommon = useTranslations('common')
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
@@ -116,7 +117,7 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
       </div>
 
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? t('common.saving') : submitLabel}
+        {pending ? tCommon('saving') : submitLabel}
       </Button>
     </form>
   )

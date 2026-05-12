@@ -22,6 +22,7 @@ import {
 
 export function CreateTreeForm() {
   const t = useTranslations('createTree')
+  const tCommon = useTranslations('common')
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -90,7 +91,7 @@ export function CreateTreeForm() {
               onClick={() => setOpen(false)}
               className="text-sepia hover:text-ink hover:bg-parchment-mid/30"
             >
-              {t('actions.cancel')}
+              {tCommon('cancel')}
             </Button>
             <Button 
               type="submit" 

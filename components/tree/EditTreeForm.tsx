@@ -28,6 +28,7 @@ type Props = {
 
 export function EditTreeForm({ treeId, defaultName, defaultDescription }: Props) {
   const t = useTranslations('editTree')
+  const tCommon = useTranslations('common')
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -103,7 +104,7 @@ export function EditTreeForm({ treeId, defaultName, defaultDescription }: Props)
               onClick={() => setOpen(false)}
               className="text-sepia hover:text-ink hover:bg-parchment-mid/30"
             >
-              {t('actions.cancel')}
+              {tCommon('cancel')}
             </Button>
             <Button 
               type="submit" 

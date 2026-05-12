@@ -9,6 +9,7 @@ import { Trash2 } from 'lucide-react'
 
 export function DeleteTreeButton({ treeId }: { treeId: string }) {
   const t = useTranslations('deleteTree')
+  const tCommon = useTranslations('common')
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
@@ -35,7 +36,7 @@ export function DeleteTreeButton({ treeId }: { treeId: string }) {
       disabled={pending}
     >
       <Trash2 className="w-3.5 h-3.5" />
-      {pending ? t('common.removing') : t('trigger')}
+      {pending ? tCommon('removing') : t('trigger')}
     </Button>
   )
 }
