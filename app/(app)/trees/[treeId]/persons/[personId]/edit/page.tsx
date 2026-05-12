@@ -7,6 +7,7 @@ import { updatePerson } from '@/server/persons'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { PersonForm } from '@/components/person/PersonForm'
+import type { PersonInput } from '@/lib/validations'
 
 export default async function EditPersonPage({
   params,
@@ -22,6 +23,11 @@ export default async function EditPersonPage({
   })
 
   if (!person || person.tree.userId !== user.id) notFound()
+
+  async function action(data: PersonInput) {
+    'use server'
+    return updatePerson(personId, data)
+  }
 
   return (
     <div className="p-8 max-w-xl mx-auto">
@@ -46,7 +52,7 @@ export default async function EditPersonPage({
           bio: person.bio ?? undefined,
           photoUrl: person.photoUrl ?? undefined,
         }}
-        action={(data) => updatePerson(personId, data)}
+        action={action}
         submitLabel="Save changes"
         redirectTo={() => `/trees/${treeId}/persons/${personId}`}
       />

@@ -15,7 +15,7 @@ export const personSchema = z.object({
   deathDate: z.string().optional(),
   deathPlace: z.string().max(200).optional(),
   isAlive: z.boolean().optional(),
-  photoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  photoUrl: z.string().optional(),
   bio: z.string().max(2000).optional(),
 })
 

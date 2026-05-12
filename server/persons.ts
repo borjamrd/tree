@@ -8,6 +8,23 @@ import { revalidatePath } from 'next/cache'
 
 type Result<T = void> = { success: true; data?: T } | { success: false; error: string }
 
+function sanitize(input: PersonInput) {
+  const nullIfEmpty = (v: string | undefined) => (v === '' || v === undefined ? null : v)
+  return {
+    ...input,
+    lastName: nullIfEmpty(input.lastName),
+    maidenName: nullIfEmpty(input.maidenName),
+    birthDate: nullIfEmpty(input.birthDate),
+    birthPlace: nullIfEmpty(input.birthPlace),
+    deathDate: nullIfEmpty(input.deathDate),
+    deathPlace: nullIfEmpty(input.deathPlace),
+    photoUrl: nullIfEmpty(input.photoUrl),
+    bio: nullIfEmpty(input.bio),
+    isAlive: input.isAlive ?? true,
+    gender: input.gender ?? 'unknown',
+  }
+}
+
 async function verifyTreeOwnership(treeId: string, userId: string) {
   const tree = await db.query.trees.findFirst({
     where: and(eq(trees.id, treeId), eq(trees.userId, userId)),
@@ -32,12 +49,8 @@ export async function createPerson(
   try {
     const { user } = devSession()
     await verifyTreeOwnership(treeId, user.id)
-    const data = personSchema.parse(input)
-    const [person] = await db.insert(persons).values({
-      ...data,
-      treeId,
-      photoUrl: data.photoUrl || null,
-    }).returning()
+    const data = sanitize(personSchema.parse(input))
+    const [person] = await db.insert(persons).values({ ...data, treeId }).returning()
     revalidatePath(`/trees/${treeId}`)
     return { success: true, data: person }
   } catch (e) {
@@ -52,7 +65,7 @@ export async function updatePerson(
   try {
     const { user } = devSession()
     const person = await verifyPersonOwnership(personId, user.id)
-    await db.update(persons).set(input).where(eq(persons.id, personId))
+    await db.update(persons).set(sanitize(input as PersonInput)).where(eq(persons.id, personId))
     revalidatePath(`/trees/${person.treeId}`)
     revalidatePath(`/trees/${person.treeId}/persons/${personId}`)
     return { success: true }
