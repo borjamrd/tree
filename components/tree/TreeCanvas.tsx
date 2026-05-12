@@ -15,6 +15,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { PersonNode } from './PersonNode'
 import { UnionNode } from './UnionNode'
 import { DeletableEdge } from './DeletableEdge'
@@ -133,32 +134,36 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
         const tY = targetNode?.position.y ?? 0
         const CENTER = 72 // (NODE_W - UNION_W) / 2
 
+        let result: { success: boolean; error?: string } | undefined
+
         if (sourceHandle === 'left' || sourceHandle === 'right') {
-          // Partner: create/merge union between the two persons
           const unionX = (sX + tX) / 2 + CENTER
           const unionY = Math.max(sY, tY) + 120
-          await linkPersons(treeId, source, target, { x: unionX, y: unionY })
+          result = await linkPersons(treeId, source, target, { x: unionX, y: unionY })
         } else if (sourceHandle === 'bottom') {
-          // Source is parent, target is child
           const unionX = sX + CENTER
           const unionY = sY + 100
           await addExistingChild(treeId, source, target, { x: unionX, y: unionY })
         } else if (sourceHandle === 'top') {
-          // Target is parent, source is child
           const unionX = tX + CENTER
           const unionY = tY + 100
           await addExistingChild(treeId, target, source, { x: unionX, y: unionY })
         }
+
+        if (result && !result.success) {
+          toast.error(result.error)
+          return
+        }
         router.refresh()
       } else if (isSourceUnion && !isTargetUnion) {
-        // Union → person: add person as child of this union
         const unionId = source.replace('union-', '')
-        await addChild(unionId, target)
+        const result = await addChild(unionId, target)
+        if (!result.success) { toast.error(result.error); return }
         router.refresh()
       } else if (!isSourceUnion && isTargetUnion) {
-        // Person → union: add person as child of this union (drag from top handle)
         const unionId = target.replace('union-', '')
-        await addChild(unionId, source)
+        const result = await addChild(unionId, source)
+        if (!result.success) { toast.error(result.error); return }
         router.refresh()
       }
     })

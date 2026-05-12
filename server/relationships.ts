@@ -214,12 +214,22 @@ export async function addChild(
   unionId: string,
   childId: string,
   type: 'biological' | 'adoptive' | 'step' | 'foster' | 'unknown' = 'biological'
-) {
-  const { user } = devSession()
-  const union = await verifyUnionOwnership(unionId, user.id)
-  const [entry] = await db.insert(parentage).values({ unionId, childId, type }).returning()
-  revalidatePath(`/trees/${union.treeId}`)
-  return entry
+): Promise<Result> {
+  try {
+    const { user } = devSession()
+    const union = await verifyUnionOwnership(unionId, user.id)
+
+    const existing = await db.query.parentage.findFirst({
+      where: and(eq(parentage.unionId, unionId), eq(parentage.childId, childId)),
+    })
+    if (existing) return { success: false, error: 'Esta persona ya es hijo/a de esta unión' }
+
+    await db.insert(parentage).values({ unionId, childId, type })
+    revalidatePath(`/trees/${union.treeId}`)
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Error al añadir hijo' }
+  }
 }
 
 export async function removeChild(parentageId: string) {
@@ -260,7 +270,8 @@ export async function linkPersons(
   personAId: string,
   personBId: string,
   unionPos: { x: number; y: number }
-) {
+): Promise<Result> {
+  try {
   const { user } = devSession()
   await verifyTreeOwnership(treeId, user.id)
 
@@ -281,6 +292,13 @@ export async function linkPersons(
       with: { children: true },
     }),
   ])
+
+  // Guard: already partners?
+  const alreadyPartners = unionsA.some(u =>
+    (u.person1Id === personAId && u.person2Id === personBId) ||
+    (u.person1Id === personBId && u.person2Id === personAId)
+  )
+  if (alreadyPartners) return { success: false, error: 'Esta pareja ya está vinculada' }
 
   // Find pairs of unions that share at least one child — merge those only
   type UnionWithChildren = (typeof unionsA)[number]
@@ -344,6 +362,10 @@ export async function linkPersons(
   }
 
   revalidatePath(`/trees/${treeId}`)
+  return { success: true }
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Error al vincular' }
+  }
 }
 
 export async function getTreeRelationships(treeId: string) {
