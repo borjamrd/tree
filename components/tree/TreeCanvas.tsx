@@ -20,6 +20,7 @@ import { PersonNode } from './PersonNode'
 import { UnionNode } from './UnionNode'
 import { DeletableEdge } from './DeletableEdge'
 import { RelativeSidebar } from './RelativeSidebar'
+import { PersonDetailSidebar, type PersonDetail } from './PersonDetailSidebar'
 import { treeToFlow } from '@/lib/tree-transform'
 import { updatePersonPosition } from '@/server/persons'
 import { linkPersons, addExistingChild, addChild, deleteUnion, removeChild } from '@/server/relationships'
@@ -53,6 +54,7 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [sidebar, setSidebar] = useState<SidebarState>(null)
+  const [personDetail, setPersonDetail] = useState<PersonDetail | null>(null)
 
   const { nodes: initialNodes, edges: initialEdges } = treeToFlow(persons, unions, parentage)
   const [nodes, setNodes] = useNodesState(initialNodes)
@@ -70,6 +72,7 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
     const node = nodes.find((n) => n.id === personId)
     if (!node) return
     const d = node.data as { firstName: string; lastName?: string | null }
+    setPersonDetail(null)
     setSidebar({
       personId,
       firstName: d.firstName,
@@ -78,10 +81,17 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
     })
   }, [nodes])
 
-  // Inject callback into person node data
+  const handlePersonClick = useCallback((personId: string) => {
+    const node = nodes.find((n) => n.id === personId)
+    if (!node) return
+    setSidebar(null)
+    setPersonDetail(node.data as PersonDetail)
+  }, [nodes])
+
+  // Inject callbacks into person node data
   const nodesWithCallback = nodes.map((n) =>
     n.type === 'person'
-      ? { ...n, data: { ...n.data, onAddRelative: handleAddRelative } }
+      ? { ...n, data: { ...n.data, onAddRelative: handleAddRelative, onPersonClick: handlePersonClick } }
       : n
   )
 
@@ -189,6 +199,22 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
           color="#D4C9B5"
         />
       </ReactFlow>
+
+      {personDetail && (
+        <PersonDetailSidebar
+          person={personDetail}
+          onClose={() => setPersonDetail(null)}
+          onAddRelative={() => {
+            setSidebar({
+              personId: personDetail.id,
+              firstName: personDetail.firstName,
+              lastName: personDetail.lastName,
+              position: nodes.find((n) => n.id === personDetail.id)?.position ?? { x: 0, y: 0 },
+            })
+            setPersonDetail(null)
+          }}
+        />
+      )}
 
       {sidebar && (
         <RelativeSidebar

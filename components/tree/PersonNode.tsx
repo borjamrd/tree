@@ -1,7 +1,6 @@
 'use client'
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
-import Link from 'next/link'
 import { Plus } from 'lucide-react'
 
 type PersonData = {
@@ -15,6 +14,7 @@ type PersonData = {
   deathDate?: string | null
   photoUrl?: string | null
   onAddRelative?: (personId: string) => void
+  onPersonClick?: (personId: string) => void
 }
 
 function accentColor(gender?: string | null) {
@@ -35,6 +35,12 @@ export function PersonNode({ data }: NodeProps) {
     e.preventDefault()
     e.stopPropagation()
     d.onAddRelative?.(d.id)
+  }
+
+  function handlePersonClick(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    d.onPersonClick?.(d.id)
   }
 
   return (
@@ -89,10 +95,9 @@ export function PersonNode({ data }: NodeProps) {
         )}
 
         {/* Name & dates */}
-        <Link
-          href={`/trees/${d.treeId}/persons/${d.id}`}
-          className="block hover:opacity-60 transition-opacity"
-          onClick={(e) => e.stopPropagation()}
+        <button
+          className="block w-full hover:opacity-60 transition-opacity text-left"
+          onClick={handlePersonClick}
         >
           <p
             className="text-center truncate leading-tight"
@@ -120,7 +125,7 @@ export function PersonNode({ data }: NodeProps) {
               {d.deathDate ? ` – ${d.deathDate}` : ''}
             </p>
           )}
-        </Link>
+        </button>
       </div>
 
       {/* Add relative button */}
