@@ -133,6 +133,7 @@
     "gender": "Género",
     "birthDate": "Fecha de nacimiento",
     "birthPlace": "Lugar de nacimiento",
+    "birthPlacePlaceholder": "ej. Madrid, España",
     "submit": "Añadir {relationship}",
     "submitting": "Añadiendo…",
     "successToast": "{relationship} añadido/a"
