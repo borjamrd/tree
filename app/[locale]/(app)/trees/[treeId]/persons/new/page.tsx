@@ -24,17 +24,17 @@ export default async function NewPersonPage({ params }: { params: Promise<{ tree
 
       <div className="relative z-10 p-8 max-w-2xl mx-auto">
         <header className="mb-12">
-          <Link 
-            href={`/trees/${treeId}`} 
+          <Link
+            href={`/trees/${treeId}`}
             className="group inline-flex items-center gap-3 text-stone-400 hover:text-stone-700 transition-all duration-300 mb-8"
           >
-            <div 
+            <div
               className="w-8 h-8 rounded-sm flex items-center justify-center transition-colors"
               style={{ border: '1px solid var(--rule)', color: 'var(--sepia)' }}
             >
               <ArrowLeft className="w-4 h-4" />
             </div>
-            <span 
+            <span
               className="font-medium tracking-[0.14em] uppercase text-[10px]"
               style={{ fontFamily: 'var(--font-body)' }}
             >
@@ -61,17 +61,13 @@ export default async function NewPersonPage({ params }: { params: Promise<{ tree
         <div className="bg-white/80 backdrop-blur-sm rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.05)] border border-white/50 p-10 relative overflow-hidden group">
           {/* Subtle texture overlay */}
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
-          
-          <PersonForm
-            treeId={treeId}
-            action={action}
-            submitLabel={t('addPerson')}
-          />
+
+          <PersonForm treeId={treeId} action={action} submitLabel={t('addPerson')} />
         </div>
 
         <footer className="mt-12 text-center">
           <p className="text-[11px] text-stone-400 font-medium tracking-wider uppercase italic">
-            "Every story matters."
+            &ldquo;Every story matters.&rdquo;
           </p>
         </footer>
       </div>

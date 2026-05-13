@@ -9,23 +9,86 @@ import { personSchema, type PersonInput } from '@/lib/validations'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Calendar, User, MapPin, Camera, AlignLeft, Sparkles, Loader2 } from 'lucide-react'
+import {
+  Calendar,
+  User,
+  MapPin,
+  Camera,
+  AlignLeft,
+  Sparkles,
+  Loader2,
+  type LucideIcon,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+function SectionTitle({ icon: Icon, title }: { icon: LucideIcon; title: string }) {
+  return (
+    <div className="flex items-center gap-2 mb-6 mt-8 first:mt-0">
+      <div className="w-8 h-8 rounded-lg bg-stone-50 flex items-center justify-center text-stone-400 group-focus-within/section:text-stone-900 transition-colors">
+        <Icon className="w-4 h-4" />
+      </div>
+      <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-400 group-focus-within/section:text-stone-600 transition-colors">
+        {title}
+      </h3>
+    </div>
+  )
+}
+
+interface InputWrapperProps {
+  label: string
+  id: string
+  error?: string
+  children: React.ReactNode
+  className?: string
+}
+
+function InputWrapper({ label, id, error, children, className }: InputWrapperProps) {
+  return (
+    <div className={cn('space-y-2 group/field', className)}>
+      <Label
+        htmlFor={id}
+        className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 group-focus-within/field:text-stone-900 transition-colors duration-300"
+      >
+        {label}
+      </Label>
+      <div className="relative">
+        {children}
+        <div className="absolute bottom-0 left-0 h-[2px] bg-stone-900 w-0 group-focus-within/field:w-full transition-all duration-500 ease-out" />
+      </div>
+      {error && (
+        <p className="text-[10px] font-medium text-red-500 mt-1 animate-in fade-in slide-in-from-top-1">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
 
 type Props = {
   treeId: string
   personId?: string
   defaultValues?: Partial<PersonInput>
-  action: (input: PersonInput) => Promise<{ success: true; data?: { id: string } | unknown } | { success: false; error: string }>
+  action: (
+    input: PersonInput
+  ) => Promise<
+    { success: true; data?: { id: string } | unknown } | { success: false; error: string }
+  >
   submitLabel: string
   redirectTo?: string
   /** When provided, called after a successful submission instead of navigating away */
   onSuccess?: (id: string) => void
 }
 
-export function PersonForm({ treeId, personId, defaultValues, action, submitLabel, redirectTo, onSuccess }: Props) {
+export function PersonForm({
+  treeId,
+  personId,
+  defaultValues,
+  action,
+  submitLabel,
+  redirectTo,
+  onSuccess,
+}: Props) {
   const t = useTranslations('personForm')
-  const tCommon = useTranslations('common')
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
@@ -47,7 +110,9 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
         if (onSuccess) {
           onSuccess(id)
         } else {
-          router.push(redirectTo ? redirectTo.replace('[id]', id) : `/trees/${treeId}/persons/${id}`)
+          router.push(
+            redirectTo ? redirectTo.replace('[id]', id) : `/trees/${treeId}/persons/${id}`
+          )
         }
       } else {
         toast.error(result.error)
@@ -55,34 +120,11 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
     })
   }
 
-  const { register, handleSubmit, formState: { errors } } = form
-
-  const SectionTitle = ({ icon: Icon, title }: { icon: any, title: string }) => (
-    <div className="flex items-center gap-2 mb-6 mt-8 first:mt-0">
-      <div className="w-8 h-8 rounded-lg bg-stone-50 flex items-center justify-center text-stone-400 group-focus-within/section:text-stone-900 transition-colors">
-        <Icon className="w-4 h-4" />
-      </div>
-      <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-400 group-focus-within/section:text-stone-600 transition-colors">{title}</h3>
-    </div>
-  )
-
-  const InputWrapper = ({ label, id, error, children, className }: any) => (
-    <div className={cn("space-y-2 group/field", className)}>
-      <Label 
-        htmlFor={id} 
-        className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 group-focus-within/field:text-stone-900 transition-colors duration-300"
-      >
-        {label}
-      </Label>
-      <div className="relative">
-        {children}
-        <div 
-          className="absolute bottom-0 left-0 h-[2px] bg-stone-900 w-0 group-focus-within/field:w-full transition-all duration-500 ease-out" 
-        />
-      </div>
-      {error && <p className="text-[10px] font-medium text-red-500 mt-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
-    </div>
-  )
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = form
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
@@ -91,9 +133,9 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
         <SectionTitle icon={User} title="Identity" />
         <div className="space-y-6">
           <InputWrapper label={t('firstName')} id="firstName" error={errors.firstName?.message}>
-            <Input 
-              id="firstName" 
-              {...register('firstName')} 
+            <Input
+              id="firstName"
+              {...register('firstName')}
               className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 text-lg font-display placeholder:text-stone-200 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
               placeholder="e.g. Eleanor"
             />
@@ -101,17 +143,17 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <InputWrapper label={t('lastName')} id="lastName">
-              <Input 
-                id="lastName" 
-                {...register('lastName')} 
+              <Input
+                id="lastName"
+                {...register('lastName')}
                 className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 placeholder:text-stone-200 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
                 placeholder="Primary surname"
               />
             </InputWrapper>
             <InputWrapper label={t('lastName2')} id="lastName2">
-              <Input 
-                id="lastName2" 
-                {...register('lastName2')} 
+              <Input
+                id="lastName2"
+                {...register('lastName2')}
                 className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 placeholder:text-stone-200 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
                 placeholder="Secondary surname"
               />
@@ -143,18 +185,18 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
         <SectionTitle icon={Calendar} title="Life Timeline" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
           <InputWrapper label={t('birthDate')} id="birthDate">
-            <Input 
-              id="birthDate" 
-              type="date" 
-              {...register('birthDate')} 
+            <Input
+              id="birthDate"
+              type="date"
+              {...register('birthDate')}
               className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
             />
           </InputWrapper>
           <InputWrapper label={t('birthPlace')} id="birthPlace">
             <div className="relative">
-              <Input 
-                id="birthPlace" 
-                {...register('birthPlace')} 
+              <Input
+                id="birthPlace"
+                {...register('birthPlace')}
                 className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 pl-6 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
                 placeholder="City, Country"
               />
@@ -163,18 +205,18 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
           </InputWrapper>
 
           <InputWrapper label={t('deathDate')} id="deathDate">
-            <Input 
-              id="deathDate" 
-              type="date" 
-              {...register('deathDate')} 
+            <Input
+              id="deathDate"
+              type="date"
+              {...register('deathDate')}
               className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 focus-visible:ring-0 focus-visible:border-stone-900 transition-all opacity-70 focus:opacity-100 transition-opacity"
             />
           </InputWrapper>
           <InputWrapper label={t('deathPlace')} id="deathPlace">
             <div className="relative">
-              <Input 
-                id="deathPlace" 
-                {...register('deathPlace')} 
+              <Input
+                id="deathPlace"
+                {...register('deathPlace')}
                 className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 pl-6 focus-visible:ring-0 focus-visible:border-stone-900 transition-all opacity-70 focus:opacity-100 transition-opacity"
                 placeholder="Resting place"
               />
@@ -190,11 +232,11 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
         <div className="space-y-8">
           <InputWrapper label={t('photoUrl')} id="photoUrl" error={errors.photoUrl?.message}>
             <div className="relative">
-              <Input 
-                id="photoUrl" 
-                type="url" 
-                placeholder={t('photoUrlPlaceholder')} 
-                {...register('photoUrl')} 
+              <Input
+                id="photoUrl"
+                type="url"
+                placeholder={t('photoUrlPlaceholder')}
+                {...register('photoUrl')}
                 className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 pl-6 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
               />
               <Camera className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-300" />
@@ -202,10 +244,10 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
           </InputWrapper>
 
           <InputWrapper label={t('bio')} id="bio">
-            <Textarea 
-              id="bio" 
-              rows={4} 
-              {...register('bio')} 
+            <Textarea
+              id="bio"
+              rows={4}
+              {...register('bio')}
               className="bg-stone-50/50 border-0 border-stone-100 rounded-2xl p-4 text-sm focus-visible:ring-2 focus-visible:ring-stone-900/5 transition-all resize-none italic"
               placeholder="Capture the essence of their story..."
             />
@@ -214,8 +256,8 @@ export function PersonForm({ treeId, personId, defaultValues, action, submitLabe
       </section>
 
       <div className="pt-8">
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={pending}
           className="w-full flex items-center justify-center gap-2 py-3.5 transition-colors duration-150 disabled:opacity-50"
           style={{
