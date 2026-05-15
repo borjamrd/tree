@@ -6,6 +6,15 @@ import { eq, and, or } from 'drizzle-orm'
 import { personSchema, type PersonInput } from '@/lib/validations'
 import { revalidatePath } from 'next/cache'
 
+export type PersonUnion = {
+  id: string
+  treeId: string
+  person1Id: string
+  person2Id: string | null
+  person1: typeof persons.$inferSelect
+  person2: typeof persons.$inferSelect | null
+}
+
 type Result<T = void> = { success: true; data?: T } | { success: false; error: string }
 
 function sanitize(input: PersonInput) {
@@ -146,4 +155,24 @@ export async function getTreePersons(treeId: string) {
   const user = await requireUser()
   await verifyTreeOwnership(treeId, user.id)
   return db.query.persons.findMany({ where: eq(persons.treeId, treeId) })
+}
+
+export async function getPersonUnions(
+  treeId: string,
+  personId: string
+): Promise<Result<PersonUnion[]>> {
+  try {
+    const user = await requireUser()
+    await verifyTreeOwnership(treeId, user.id)
+    const result = await db.query.unions.findMany({
+      where: and(
+        eq(unions.treeId, treeId),
+        or(eq(unions.person1Id, personId), eq(unions.person2Id, personId))
+      ),
+      with: { person1: true, person2: true },
+    })
+    return { success: true, data: result as PersonUnion[] }
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Failed to fetch unions' }
+  }
 }

@@ -1,0 +1,15 @@
+{
+  "feature": "Child-Partner Selection when adding a child",
+  "slug": "child-partner-selection",
+  "created": "2026-05-15",
+  "status": "completed",
+  "current_step": "review",
+  "steps": {
+    "analysis": { "status": "completed", "output": "analysis.md" },
+    "functional_doc": { "status": "completed", "output": "functional_doc.md" },
+    "test_planning": { "status": "completed", "output": "test_plan.md" },
+    "awaiting_confirmation": { "status": "completed", "output": null },
+    "implementation": { "status": "completed", "output": null },
+    "review": { "status": "completed", "output": "review.md" }
+  }
+}

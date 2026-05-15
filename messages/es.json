@@ -143,7 +143,13 @@
     "birthPlacePlaceholder": "ej. Madrid, España",
     "submit": "Añadir {relationship}",
     "submitting": "Añadiendo…",
-    "successToast": "{relationship} añadido/a"
+    "successToast": "{relationship} añadido/a",
+    "partnerLoading": "Cargando parejas…",
+    "noPartners": "Sin parejas registradas. Se creará una familia monoparental.",
+    "partnerAutoSelected": "Pareja: {name}",
+    "selectPartner": "Seleccionar pareja",
+    "noOtherParent": "Sin otro progenitor",
+    "unknownPartner": "Pareja desconocida"
   },
   "auth": {
     "login": {

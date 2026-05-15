@@ -1,12 +1,13 @@
 'use client'
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { X, Heart, Baby, User } from 'lucide-react'
 import { personSchema, type PersonInput } from '@/lib/validations'
-import { addRelative } from '@/server/relationships'
+import { addRelative, addChildToUnion } from '@/server/relationships'
+import { getPersonUnions, type PersonUnion } from '@/server/persons'
 
 type RelationshipType = 'partner' | 'child' | 'parent'
 
@@ -44,26 +45,88 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 5,
 }
 
+function getPartnerName(union: PersonUnion, anchorPersonId: string, fallback: string): string {
+  const partner = union.person1Id === anchorPersonId ? union.person2 : union.person1
+  if (!partner) return fallback
+  return [partner.firstName, partner.lastName].filter(Boolean).join(' ') || fallback
+}
+
 export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Props) {
   const t = useTranslations('relativeSidebar')
   const tForm = useTranslations('personForm')
   const [relationship, setRelationship] = useState<RelationshipType>('partner')
   const [pending, startTransition] = useTransition()
+  const [anchorUnions, setAnchorUnions] = useState<PersonUnion[] | null>(null)
+  const [unionsLoading, setUnionsLoading] = useState(false)
+  // undefined = not yet selected, null = "no other parent", string = unionId
+  const [selectedUnionId, setSelectedUnionId] = useState<string | null | undefined>(undefined)
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<PersonInput>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<PersonInput>({
     resolver: zodResolver(personSchema),
     defaultValues: { gender: 'unknown', isAlive: true },
   })
 
+  useEffect(() => {
+    if (relationship !== 'child') {
+      setAnchorUnions(null)
+      setSelectedUnionId(undefined)
+      return
+    }
+    let cancelled = false
+    setUnionsLoading(true)
+    setAnchorUnions(null)
+    setSelectedUnionId(undefined)
+    getPersonUnions(treeId, anchorPerson.id).then((result) => {
+      if (cancelled) return
+      if (result.success && result.data) {
+        setAnchorUnions(result.data)
+        if (result.data.length === 1) setSelectedUnionId(result.data[0].id)
+        if (result.data.length === 0) setSelectedUnionId(null)
+      } else {
+        setSelectedUnionId(null)
+        toast.error(result.success === false ? result.error : 'Failed to load partners')
+      }
+      setUnionsLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [relationship, treeId, anchorPerson.id])
+
   const RELATIONSHIPS: { value: RelationshipType; label: string; icon: React.ReactNode }[] = [
     { value: 'partner', label: t('partner'), icon: <Heart className="w-3.5 h-3.5" /> },
-    { value: 'child',   label: t('child'),   icon: <Baby  className="w-3.5 h-3.5" /> },
-    { value: 'parent',  label: t('parent'),  icon: <User  className="w-3.5 h-3.5" /> },
+    { value: 'child', label: t('child'), icon: <Baby className="w-3.5 h-3.5" /> },
+    { value: 'parent', label: t('parent'), icon: <User className="w-3.5 h-3.5" /> },
   ]
+
+  const submitDisabled =
+    pending || (relationship === 'child' && (unionsLoading || selectedUnionId === undefined))
 
   function onSubmit(data: PersonInput) {
     startTransition(async () => {
-      const result = await addRelative(treeId, anchorPerson.id, relationship, data, anchorPerson.position)
+      let result
+      if (relationship === 'child') {
+        result = await addChildToUnion(
+          treeId,
+          anchorPerson.id,
+          selectedUnionId ?? null,
+          data,
+          anchorPerson.position
+        )
+      } else {
+        result = await addRelative(
+          treeId,
+          anchorPerson.id,
+          relationship,
+          data,
+          anchorPerson.position
+        )
+      }
       if (result.success) {
         toast.success(t('successToast', { relationship: t(relationship) }))
         reset()
@@ -126,7 +189,6 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
-
         {/* Relationship selector */}
         <div>
           <span style={labelStyle}>{t('relationship')}</span>
@@ -158,16 +220,74 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
                     {label}
                   </span>
                   {active && (
-                    <div
-                      className="w-1 h-1 rounded-full"
-                      style={{ background: 'var(--gold)' }}
-                    />
+                    <div className="w-1 h-1 rounded-full" style={{ background: 'var(--gold)' }} />
                   )}
                 </button>
               )
             })}
           </div>
         </div>
+
+        {/* Partner selector — only for child relationship */}
+        {relationship === 'child' && (
+          <div>
+            <span style={labelStyle}>{t('selectPartner')}</span>
+            {unionsLoading ? (
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '12px',
+                  color: 'var(--sepia)',
+                  fontStyle: 'italic',
+                }}
+              >
+                {t('partnerLoading')}
+              </p>
+            ) : anchorUnions !== null && anchorUnions.length === 0 ? (
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '12px',
+                  color: 'var(--sepia)',
+                  fontStyle: 'italic',
+                  lineHeight: 1.4,
+                }}
+              >
+                {t('noPartners')}
+              </p>
+            ) : anchorUnions !== null && anchorUnions.length === 1 ? (
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--ink)' }}>
+                {t('partnerAutoSelected', {
+                  name: getPartnerName(anchorUnions[0], anchorPerson.id, t('unknownPartner')),
+                })}
+              </p>
+            ) : anchorUnions !== null && anchorUnions.length > 1 ? (
+              <select
+                value={selectedUnionId ?? ''}
+                onChange={(e) =>
+                  setSelectedUnionId(e.target.value === '__none__' ? null : e.target.value)
+                }
+                style={{ ...inputStyle, cursor: 'pointer' }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--sepia)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--rule)'
+                }}
+              >
+                <option value="" disabled>
+                  —
+                </option>
+                {anchorUnions.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {getPartnerName(u, anchorPerson.id, t('unknownPartner'))}
+                  </option>
+                ))}
+                <option value="__none__">{t('noOtherParent')}</option>
+              </select>
+            ) : null}
+          </div>
+        )}
 
         {/* Ornamental divider */}
         <div className="flex items-center gap-3">
@@ -187,11 +307,22 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
               {...register('firstName')}
               placeholder={t('firstNamePlaceholder')}
               style={inputStyle}
-              onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-              onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--sepia)'
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--rule)'
+              }}
             />
             {errors.firstName && (
-              <p style={{ fontSize: 10, color: '#b45309', marginTop: 3, fontFamily: 'var(--font-body)' }}>
+              <p
+                style={{
+                  fontSize: 10,
+                  color: '#b45309',
+                  marginTop: 3,
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
                 {errors.firstName.message}
               </p>
             )}
@@ -203,8 +334,12 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
               <input
                 {...register('lastName')}
                 style={inputStyle}
-                onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-                onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--sepia)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--rule)'
+                }}
               />
             </div>
             <div>
@@ -212,8 +347,12 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
               <input
                 {...register('lastName2')}
                 style={inputStyle}
-                onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-                onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--sepia)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--rule)'
+                }}
               />
             </div>
           </div>
@@ -223,8 +362,12 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
             <select
               {...register('gender')}
               style={{ ...inputStyle, cursor: 'pointer' }}
-              onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-              onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--sepia)'
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--rule)'
+              }}
             >
               <option value="unknown">{tForm('genderUnknown')}</option>
               <option value="male">{tForm('genderMale')}</option>
@@ -240,8 +383,12 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
                 type="date"
                 {...register('birthDate')}
                 style={inputStyle}
-                onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-                onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--sepia)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--rule)'
+                }}
               />
             </div>
             <div>
@@ -250,8 +397,12 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
                 {...register('birthPlace')}
                 placeholder={t('birthPlacePlaceholder')}
                 style={inputStyle}
-                onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-                onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--sepia)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--rule)'
+                }}
               />
             </div>
           </div>
@@ -263,20 +414,28 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
         <button
           type="submit"
           form="relative-form"
-          disabled={pending}
+          disabled={submitDisabled}
           className="w-full py-3 transition-colors duration-200"
           style={{
-            background: pending ? 'var(--sepia)' : 'var(--ink)',
+            background: submitDisabled ? 'var(--sepia)' : 'var(--ink)',
             color: 'var(--parchment)',
             fontFamily: 'var(--font-body)',
             fontSize: '11px',
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
             border: 'none',
-            cursor: pending ? 'not-allowed' : 'pointer',
+            cursor: submitDisabled ? 'not-allowed' : 'pointer',
           }}
-          onMouseEnter={(e) => { if (!pending) e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'var(--ink)' }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = pending ? 'var(--sepia)' : 'var(--ink)'; e.currentTarget.style.color = 'var(--parchment)' }}
+          onMouseEnter={(e) => {
+            if (!submitDisabled) {
+              e.currentTarget.style.background = 'var(--gold)'
+              e.currentTarget.style.color = 'var(--ink)'
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = submitDisabled ? 'var(--sepia)' : 'var(--ink)'
+            e.currentTarget.style.color = 'var(--parchment)'
+          }}
         >
           {pending ? t('submitting') : t('submit', { relationship: t(relationship) })}
         </button>

@@ -431,6 +431,61 @@ export async function linkPersons(
   }
 }
 
+export async function addChildToUnion(
+  treeId: string,
+  anchorPersonId: string,
+  unionId: string | null,
+  personData: PersonInput,
+  anchorPosition: { x: number; y: number }
+): Promise<Result<{ personId: string; unionId: string }>> {
+  try {
+    const user = await requireUser()
+    await verifyTreeOwnership(treeId, user.id)
+
+    if (unionId) {
+      const existing = await db.query.unions.findFirst({
+        where: and(eq(unions.id, unionId), eq(unions.treeId, treeId)),
+      })
+      if (!existing) return { success: false, error: 'Union not found in this tree' }
+    }
+
+    const parsed = sanitizePerson(personSchema.parse(personData))
+    const pos = await computePosition(treeId, anchorPersonId, 'child', anchorPosition)
+
+    const [newPerson] = await db
+      .insert(persons)
+      .values({ ...parsed, treeId, posX: String(pos.personX), posY: String(pos.personY) })
+      .returning()
+
+    let targetUnionId: string
+    if (unionId) {
+      targetUnionId = unionId
+    } else {
+      const [newUnion] = await db
+        .insert(unions)
+        .values({
+          treeId,
+          person1Id: anchorPersonId,
+          person2Id: null,
+          type: 'unknown',
+          posX: String(pos.unionX),
+          posY: String(pos.unionY),
+        })
+        .returning()
+      targetUnionId = newUnion.id
+    }
+
+    await db
+      .insert(parentage)
+      .values({ unionId: targetUnionId, childId: newPerson.id, type: 'biological' })
+
+    revalidatePath(`/trees/${treeId}`)
+    return { success: true, data: { personId: newPerson.id, unionId: targetUnionId } }
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Failed to add child' }
+  }
+}
+
 export async function getTreeRelationships(treeId: string) {
   const user = await requireUser()
   await verifyTreeOwnership(treeId, user.id)

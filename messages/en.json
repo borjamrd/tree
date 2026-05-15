@@ -143,7 +143,13 @@
     "birthPlacePlaceholder": "e.g. London, UK",
     "submit": "Add {relationship}",
     "submitting": "Adding…",
-    "successToast": "{relationship} added"
+    "successToast": "{relationship} added",
+    "partnerLoading": "Loading partners…",
+    "noPartners": "No registered partners. A single-parent family will be created.",
+    "partnerAutoSelected": "Partner: {name}",
+    "selectPartner": "Select partner",
+    "noOtherParent": "No other parent",
+    "unknownPartner": "Unknown partner"
   },
   "auth": {
     "login": {
