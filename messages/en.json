@@ -162,5 +162,71 @@
       "alreadyHaveAccount": "Already have an account?",
       "loginLink": "Sign in"
     }
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "signIn": "Sign in"
+    },
+    "hero": {
+      "label": "Genealogy",
+      "tagline": "Your Family History, Preserved",
+      "description": "Map the generations. Preserve the stories.",
+      "descriptionEm": "Connect who you are to where you came from.",
+      "cta": "Begin Your Tree",
+      "ctaSecondary": "Sign In"
+    },
+    "features": {
+      "label": "What TRE offers",
+      "title": "Everything your heritage deserves",
+      "items": [
+        {
+          "title": "Visual Tree Builder",
+          "body": "Drag and drop to place ancestors, partners, and descendants. Every relationship rendered with clarity on an infinite canvas."
+        },
+        {
+          "title": "Portraits & Stories",
+          "body": "Attach photographs, birth places, and life narratives to each person. Preserve what documents cannot: the texture of a life."
+        },
+        {
+          "title": "Export & Share",
+          "body": "Download portrait cards as high-resolution prints. Share your completed tree with family across generations."
+        }
+      ]
+    },
+    "canvas": {
+      "label": "The canvas",
+      "title": "See your roots take shape",
+      "mockLabel": "Müller Family Tree"
+    },
+    "howItWorks": {
+      "label": "Getting started",
+      "title": "Three steps to your heritage",
+      "steps": [
+        {
+          "title": "Create your tree",
+          "body": "Name your family tree and place yourself at the center. Your story begins with a single person."
+        },
+        {
+          "title": "Add relatives",
+          "body": "Drag handles to add parents, siblings, partners, and children. Fill in dates, places, and photographs."
+        },
+        {
+          "title": "Share & preserve",
+          "body": "Export beautiful portrait cards for print, or share your tree link with family members worldwide."
+        }
+      ]
+    },
+    "quote": {
+      "text": "In every conceivable manner, the family is link to our past, bridge to our future.",
+      "author": "Alex Haley"
+    },
+    "cta": {
+      "label": "Begin today",
+      "title": "Your story",
+      "titleEm": "awaits.",
+      "body": "Thousands of ancestors wait to be remembered. Your tree begins with a single name.",
+      "button": "Create Free Account"
+    }
   }
 }

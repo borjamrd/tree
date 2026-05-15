@@ -162,5 +162,71 @@
       "alreadyHaveAccount": "¿Ya tienes cuenta?",
       "loginLink": "Inicia sesión"
     }
+  },
+  "landing": {
+    "nav": {
+      "features": "Características",
+      "signIn": "Iniciar sesión"
+    },
+    "hero": {
+      "label": "Genealogía",
+      "tagline": "Tu historia familiar, preservada",
+      "description": "Traza las generaciones. Preserva las historias.",
+      "descriptionEm": "Conecta quién eres con de dónde vienes.",
+      "cta": "Comienza tu árbol",
+      "ctaSecondary": "Iniciar sesión"
+    },
+    "features": {
+      "label": "Lo que ofrece TRE",
+      "title": "Todo lo que tu herencia merece",
+      "items": [
+        {
+          "title": "Constructor visual de árboles",
+          "body": "Arrastra y suelta para colocar antepasados, parejas y descendientes. Cada relación representada con claridad en un lienzo infinito."
+        },
+        {
+          "title": "Retratos e historias",
+          "body": "Adjunta fotografías, lugares de nacimiento y narrativas de vida a cada persona. Preserva lo que los documentos no pueden: la textura de una vida."
+        },
+        {
+          "title": "Exportar y compartir",
+          "body": "Descarga tarjetas de retrato en alta resolución. Comparte tu árbol completo con la familia a través de generaciones."
+        }
+      ]
+    },
+    "canvas": {
+      "label": "El lienzo",
+      "title": "Ve cómo cobran forma tus raíces",
+      "mockLabel": "Árbol familiar Müller"
+    },
+    "howItWorks": {
+      "label": "Cómo empezar",
+      "title": "Tres pasos hacia tu herencia",
+      "steps": [
+        {
+          "title": "Crea tu árbol",
+          "body": "Dale nombre a tu árbol genealógico y colócate en el centro. Tu historia comienza con una sola persona."
+        },
+        {
+          "title": "Añade familiares",
+          "body": "Arrastra para añadir padres, hermanos, parejas e hijos. Completa fechas, lugares y fotografías."
+        },
+        {
+          "title": "Comparte y preserva",
+          "body": "Exporta hermosas tarjetas de retrato para imprimir, o comparte el enlace de tu árbol con familiares de todo el mundo."
+        }
+      ]
+    },
+    "quote": {
+      "text": "De todas las formas imaginables, la familia es el vínculo con nuestro pasado, el puente hacia nuestro futuro.",
+      "author": "Alex Haley"
+    },
+    "cta": {
+      "label": "Empieza hoy",
+      "title": "Tu historia",
+      "titleEm": "te espera.",
+      "body": "Miles de antepasados esperan ser recordados. Tu árbol comienza con un solo nombre.",
+      "button": "Crear cuenta gratis"
+    }
   }
 }
