@@ -72,9 +72,7 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: 'images.unsplash.com' },
-    ],
+    remotePatterns: [{ protocol: 'https', hostname: 'images.unsplash.com' }],
   },
 }
 
@@ -102,7 +100,7 @@ Crear el directorio `messages/` en la raíz del proyecto.
   },
   "nav": {
     "dashboard": "Dashboard",
-    "appName": "Tre"
+    "appName": "Treel"
   },
   "dashboard": {
     "title": "Your Lineage",
@@ -246,7 +244,7 @@ Crear el directorio `messages/` en la raíz del proyecto.
   },
   "nav": {
     "dashboard": "Panel",
-    "appName": "Tre"
+    "appName": "Treel"
   },
   "dashboard": {
     "title": "Tu linaje",
@@ -447,7 +445,7 @@ const crimson = Crimson_Pro({
 })
 
 export const metadata: Metadata = {
-  title: 'TRE — Your Family History',
+  title: 'Treel — Your Family History',
   description: 'Preserve, visualize, and share your family tree across generations.',
 }
 
@@ -468,9 +466,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={`${cormorant.variable} ${crimson.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider messages={messages}>
-          {children}
-        </NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
         <Toaster position="bottom-right" richColors />
       </body>
     </html>
@@ -532,27 +528,28 @@ export function MyComponent() {
 
 ### Archivos a modificar (con namespace asignado)
 
-| Archivo | Tipo | Namespace |
-|---|---|---|
-| `app/[locale]/(app)/layout.tsx` | Server | `nav` |
-| `app/[locale]/(app)/dashboard/page.tsx` | Server | `dashboard` |
-| `app/[locale]/(app)/trees/[treeId]/page.tsx` | Server | `treePage` |
-| `app/[locale]/(app)/trees/[treeId]/persons/[personId]/page.tsx` | Server | `personDetailPage` |
-| `app/[locale]/(app)/trees/[treeId]/persons/[personId]/edit/page.tsx` | Server | `editPersonPage` |
-| `components/tree/CreateTreeForm.tsx` | Client | `createTree` |
-| `components/tree/EditTreeForm.tsx` | Client | `editTree` |
-| `components/tree/DeleteTreeButton.tsx` | Client | `deleteTree` |
-| `components/tree/PersonDetailSidebar.tsx` | Client | `personSidebar` |
-| `components/tree/RelativeSidebar.tsx` | Client | `relativeSidebar` |
-| `components/person/PersonForm.tsx` | Client | `personForm` |
-| `components/person/DeletePersonButton.tsx` | Client | `deletePersonButton` |
-| `components/person/PersonCard.tsx` | Client/Server | `personCard` |
+| Archivo                                                              | Tipo          | Namespace            |
+| -------------------------------------------------------------------- | ------------- | -------------------- |
+| `app/[locale]/(app)/layout.tsx`                                      | Server        | `nav`                |
+| `app/[locale]/(app)/dashboard/page.tsx`                              | Server        | `dashboard`          |
+| `app/[locale]/(app)/trees/[treeId]/page.tsx`                         | Server        | `treePage`           |
+| `app/[locale]/(app)/trees/[treeId]/persons/[personId]/page.tsx`      | Server        | `personDetailPage`   |
+| `app/[locale]/(app)/trees/[treeId]/persons/[personId]/edit/page.tsx` | Server        | `editPersonPage`     |
+| `components/tree/CreateTreeForm.tsx`                                 | Client        | `createTree`         |
+| `components/tree/EditTreeForm.tsx`                                   | Client        | `editTree`           |
+| `components/tree/DeleteTreeButton.tsx`                               | Client        | `deleteTree`         |
+| `components/tree/PersonDetailSidebar.tsx`                            | Client        | `personSidebar`      |
+| `components/tree/RelativeSidebar.tsx`                                | Client        | `relativeSidebar`    |
+| `components/person/PersonForm.tsx`                                   | Client        | `personForm`         |
+| `components/person/DeletePersonButton.tsx`                           | Client        | `deletePersonButton` |
+| `components/person/PersonCard.tsx`                                   | Client/Server | `personCard`         |
 
 ---
 
 ### Ejemplo concreto: `EditTreeForm.tsx` (Client Component)
 
 **Antes:**
+
 ```tsx
 'use client'
 // ...
@@ -565,6 +562,7 @@ toast.success('Lineage records updated')
 ```
 
 **Después:**
+
 ```tsx
 'use client'
 import { useTranslations } from 'next-intl'
@@ -573,7 +571,7 @@ import { useTranslations } from 'next-intl'
 export function EditTreeForm({ treeId, defaultName, defaultDescription }: Props) {
   const t = useTranslations('editTree')
   // ...
-  
+
   function onSubmit(data: TreeInput) {
     startTransition(async () => {
       const result = await updateTree(treeId, data)
@@ -599,13 +597,14 @@ export function EditTreeForm({ treeId, defaultName, defaultDescription }: Props)
 ### Ejemplo concreto: `DashboardPage` (Server Component)
 
 **Antes:**
+
 ```tsx
 export default async function DashboardPage() {
   const trees = await getUserTrees()
   return (
     <h1>Your Lineage</h1>
-    <p>{trees.length === 0 
-      ? "Begin your journey..." 
+    <p>{trees.length === 0
+      ? "Begin your journey..."
       : `Overseeing ${trees.length} ${trees.length === 1 ? 'legacy' : 'legacies'}...`
     }</p>
   )
@@ -613,6 +612,7 @@ export default async function DashboardPage() {
 ```
 
 **Después:**
+
 ```tsx
 import { getTranslations } from 'next-intl/server'
 
@@ -622,8 +622,8 @@ export default async function DashboardPage() {
 
   return (
     <h1>{t('title')}</h1>
-    <p>{trees.length === 0 
-      ? t('subtitleEmpty') 
+    <p>{trees.length === 0
+      ? t('subtitleEmpty')
       : t('subtitleCount', { count: trees.length })
     }</p>
   )
@@ -637,15 +637,17 @@ export default async function DashboardPage() {
 La función `kinshipLabels` actual usa lógica condicional con strings hardcoded. Debe refactorizarse para usar el namespace `personSidebar.kinship`:
 
 **Antes:**
+
 ```tsx
 function kinshipLabels(gender?: string | null) {
-  if (gender === 'male')   return { child: 'Hijo de', parent: 'Padre de' }
+  if (gender === 'male') return { child: 'Hijo de', parent: 'Padre de' }
   if (gender === 'female') return { child: 'Hija de', parent: 'Madre de' }
   return { child: 'Hijo/a de', parent: 'Progenitor/a de' }
 }
 ```
 
 **Después:**
+
 ```tsx
 // Dentro del componente, con acceso a t = useTranslations('personSidebar')
 function getKinshipLabels(gender?: string | null) {
@@ -769,12 +771,12 @@ export function LocaleSwitcher() {
 
 ## Archivos nuevos creados por este plan
 
-| Ruta | Descripción |
-|---|---|
-| `i18n/routing.ts` | Locales disponibles y locale por defecto |
-| `i18n/request.ts` | Carga de mensajes para Server Components |
-| `i18n/navigation.ts` | Link, useRouter, redirect tipados con locale |
-| `messages/en.json` | Todos los strings en inglés |
-| `messages/es.json` | Todos los strings en español |
-| `global.d.ts` | Tipos TypeScript para autocompletado de claves |
-| `app/[locale]/layout.tsx` | Layout raíz con NextIntlClientProvider |
+| Ruta                      | Descripción                                    |
+| ------------------------- | ---------------------------------------------- |
+| `i18n/routing.ts`         | Locales disponibles y locale por defecto       |
+| `i18n/request.ts`         | Carga de mensajes para Server Components       |
+| `i18n/navigation.ts`      | Link, useRouter, redirect tipados con locale   |
+| `messages/en.json`        | Todos los strings en inglés                    |
+| `messages/es.json`        | Todos los strings en español                   |
+| `global.d.ts`             | Tipos TypeScript para autocompletado de claves |
+| `app/[locale]/layout.tsx` | Layout raíz con NextIntlClientProvider         |

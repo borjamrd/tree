@@ -2,20 +2,20 @@
 
 ## Design Decisions (settled, do not revisit)
 
-| Aspect | Decision |
-|---|---|
-| Collaborator permissions | Full access (create/edit/delete persons, unions, parentage) except: delete tree, manage members |
-| Admin permissions | Everything, including delete tree and manage members |
-| Invitation mechanism | Email with tokenized acceptance link (Resend) |
-| Collaborator limit | Max 3 per tree, admin does not occupy a slot |
-| Slot reservation | Slot is reserved at invite time (pending counts against limit) |
-| Invitation expiry | 7 days from `invitedAt` |
-| Removed collaborator data | Nodes remain in the tree — data belongs to the tree, not the user |
-| Attribution | `createdBy` (FK → user) added to `persons`, `unions`, `parentage` |
-| Real-time sync | None in v1 — eventual consistency, users refresh to see changes |
-| Notifications | None in v1 |
-| Account deletion guard | Block if user has trees with pending/accepted collaborators |
-| Dashboard display | Shared trees appear alongside own trees with an `isShared` visual badge |
+| Aspect                    | Decision                                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------- |
+| Collaborator permissions  | Full access (create/edit/delete persons, unions, parentage) except: delete tree, manage members |
+| Admin permissions         | Everything, including delete tree and manage members                                            |
+| Invitation mechanism      | Email with tokenized acceptance link (Resend)                                                   |
+| Collaborator limit        | Max 3 per tree, admin does not occupy a slot                                                    |
+| Slot reservation          | Slot is reserved at invite time (pending counts against limit)                                  |
+| Invitation expiry         | 7 days from `invitedAt`                                                                         |
+| Removed collaborator data | Nodes remain in the tree — data belongs to the tree, not the user                               |
+| Attribution               | `createdBy` (FK → user) added to `persons`, `unions`, `parentage`                               |
+| Real-time sync            | None in v1 — eventual consistency, users refresh to see changes                                 |
+| Notifications             | None in v1                                                                                      |
+| Account deletion guard    | Block if user has trees with pending/accepted collaborators                                     |
+| Dashboard display         | Shared trees appear alongside own trees with an `isShared` visual badge                         |
 
 ---
 
@@ -49,25 +49,33 @@ export const memberStatusEnum = pgEnum('member_status', ['pending', 'accepted', 
 Add after the `trees` table definition:
 
 ```typescript
-export const treeMembers = pgTable('tree_members', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  treeId: uuid('tree_id').notNull().references(() => trees.id, { onDelete: 'cascade' }),
-  // null while invitation is pending (user may not exist yet)
-  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
-  invitedEmail: text('invited_email').notNull(),
-  inviteToken: text('invite_token').notNull().unique(),
-  status: memberStatusEnum('status').default('pending').notNull(),
-  invitedBy: text('invited_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  invitedAt: timestamp('invited_at').defaultNow().notNull(),
-  acceptedAt: timestamp('accepted_at'),
-  expiresAt: timestamp('expires_at').notNull(),
-}, (t) => [
-  index('tree_members_tree_idx').on(t.treeId),
-  index('tree_members_user_idx').on(t.userId),
-  index('tree_members_token_idx').on(t.inviteToken),
-  // prevent duplicate active invitations for the same email on the same tree
-  unique('unique_tree_email').on(t.treeId, t.invitedEmail),
-])
+export const treeMembers = pgTable(
+  'tree_members',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    treeId: uuid('tree_id')
+      .notNull()
+      .references(() => trees.id, { onDelete: 'cascade' }),
+    // null while invitation is pending (user may not exist yet)
+    userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    invitedEmail: text('invited_email').notNull(),
+    inviteToken: text('invite_token').notNull().unique(),
+    status: memberStatusEnum('status').default('pending').notNull(),
+    invitedBy: text('invited_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    invitedAt: timestamp('invited_at').defaultNow().notNull(),
+    acceptedAt: timestamp('accepted_at'),
+    expiresAt: timestamp('expires_at').notNull(),
+  },
+  (t) => [
+    index('tree_members_tree_idx').on(t.treeId),
+    index('tree_members_user_idx').on(t.userId),
+    index('tree_members_token_idx').on(t.inviteToken),
+    // prevent duplicate active invitations for the same email on the same tree
+    unique('unique_tree_email').on(t.treeId, t.invitedEmail),
+  ]
+)
 ```
 
 ### 1.3 Add `createdBy` to `persons`, `unions`, `parentage`
@@ -96,7 +104,11 @@ createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' 
 export const treeMembersRelations = relations(treeMembers, ({ one }) => ({
   tree: one(trees, { fields: [treeMembers.treeId], references: [trees.id] }),
   user: one(users, { fields: [treeMembers.userId], references: [users.id] }),
-  inviter: one(users, { fields: [treeMembers.invitedBy], references: [users.id], relationName: 'inviter' }),
+  inviter: one(users, {
+    fields: [treeMembers.invitedBy],
+    references: [users.id],
+    relationName: 'inviter',
+  }),
 }))
 ```
 
@@ -119,6 +131,7 @@ pnpm db:push
 ```
 
 Verify in `pnpm db:studio` that:
+
 - `tree_members` table exists with all columns
 - `persons.created_by`, `unions.created_by`, `parentage.created_by` columns exist as nullable
 
@@ -179,10 +192,7 @@ export async function getActiveSlotCount(treeId: string): Promise<number> {
     .where(
       and(
         eq(treeMembers.treeId, treeId),
-        or(
-          eq(treeMembers.status, 'pending'),
-          eq(treeMembers.status, 'accepted')
-        )
+        or(eq(treeMembers.status, 'pending'), eq(treeMembers.status, 'accepted'))
       )
     )
   return result[0]?.count ?? 0
@@ -216,10 +226,11 @@ const person = await db.query.persons.findFirst({
   with: { tree: true },
 })
 if (!person) throw new Error('Person not found')
-await requireTreeAccess(person.treeId, user.id)  // throws if no access
+await requireTreeAccess(person.treeId, user.id) // throws if no access
 ```
 
 **For each person mutation (`createPerson`, `updatePerson`, `deletePerson`, `updatePersonPosition`, `setPersonAsSelf`):**
+
 - Replace `verifyTreeOwnership(treeId, user.id)` with `await requireTreeAccess(treeId, user.id)`
 - Replace `verifyPersonOwnership(personId, user.id)` with the inline pattern above
 
@@ -236,7 +247,10 @@ export async function createPerson(
     const user = await requireUser()
     await requireTreeAccess(treeId, user.id)
     const data = sanitize(personSchema.parse(input))
-    const [person] = await db.insert(persons).values({ ...data, treeId, createdBy: user.id }).returning()
+    const [person] = await db
+      .insert(persons)
+      .values({ ...data, treeId, createdBy: user.id })
+      .returning()
     revalidatePath(`/trees/${treeId}`)
     return { success: true, data: person }
   } catch (e) {
@@ -303,7 +317,10 @@ export async function inviteCollaborator(
     // Check slot availability
     const activeSlots = await getActiveSlotCount(treeId)
     if (activeSlots >= MAX_COLLABORATORS) {
-      return { success: false, error: `This tree has reached the maximum of ${MAX_COLLABORATORS} collaborators` }
+      return {
+        success: false,
+        error: `This tree has reached the maximum of ${MAX_COLLABORATORS} collaborators`,
+      }
     }
 
     // Check for existing active invitation for this email
@@ -353,10 +370,7 @@ export async function acceptInvitation(token: string): Promise<Result<{ treeId: 
     const user = await requireUser()
 
     const invitation = await db.query.treeMembers.findFirst({
-      where: and(
-        eq(treeMembers.inviteToken, token),
-        eq(treeMembers.status, 'pending')
-      ),
+      where: and(eq(treeMembers.inviteToken, token), eq(treeMembers.status, 'pending')),
     })
 
     if (!invitation) {
@@ -369,10 +383,14 @@ export async function acceptInvitation(token: string): Promise<Result<{ treeId: 
 
     // Verify the logged-in user's email matches the invited email
     if (user.email !== invitation.invitedEmail) {
-      return { success: false, error: `This invitation was sent to ${invitation.invitedEmail}. Please sign in with that account.` }
+      return {
+        success: false,
+        error: `This invitation was sent to ${invitation.invitedEmail}. Please sign in with that account.`,
+      }
     }
 
-    await db.update(treeMembers)
+    await db
+      .update(treeMembers)
       .set({
         status: 'accepted',
         userId: user.id,
@@ -400,9 +418,7 @@ export async function removeMember(memberId: string): Promise<Result> {
 
     await requireTreeAdmin(member.treeId, user.id)
 
-    await db.update(treeMembers)
-      .set({ status: 'revoked' })
-      .where(eq(treeMembers.id, memberId))
+    await db.update(treeMembers).set({ status: 'revoked' }).where(eq(treeMembers.id, memberId))
 
     revalidatePath(`/trees/${member.treeId}/settings`)
     return { success: true }
@@ -447,11 +463,16 @@ interface SendInvitationParams {
   token: string
 }
 
-export async function sendInvitationEmail({ to, inviterName, treeName, token }: SendInvitationParams) {
+export async function sendInvitationEmail({
+  to,
+  inviterName,
+  treeName,
+  token,
+}: SendInvitationParams) {
   const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite/accept?token=${token}`
 
   await resend.emails.send({
-    from: 'TRE <noreply@yourdomain.com>',  // replace with verified Resend domain
+    from: 'Treel <noreply@yourdomain.com>', // replace with verified Resend domain
     to,
     subject: `${inviterName} invited you to collaborate on "${treeName}"`,
     react: InvitationEmail({ inviterName, treeName, acceptUrl }),
@@ -463,8 +484,15 @@ Create `emails/invitation.tsx` (React Email template):
 
 ```tsx
 import {
-  Body, Button, Container, Head, Heading,
-  Html, Preview, Section, Text
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Preview,
+  Section,
+  Text,
 } from '@react-email/components'
 
 interface Props {
@@ -479,12 +507,21 @@ export function InvitationEmail({ inviterName, treeName, acceptUrl }: Props) {
       <Head />
       <Preview>{inviterName} invited you to collaborate on a family tree</Preview>
       <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f7f4', padding: '40px 0' }}>
-        <Container style={{ maxWidth: '480px', margin: '0 auto', backgroundColor: '#fff', borderRadius: '12px', padding: '40px' }}>
+        <Container
+          style={{
+            maxWidth: '480px',
+            margin: '0 auto',
+            backgroundColor: '#fff',
+            borderRadius: '12px',
+            padding: '40px',
+          }}
+        >
           <Heading style={{ fontSize: '22px', fontWeight: '600', color: '#1c1917' }}>
             You're invited to "{treeName}"
           </Heading>
           <Text style={{ color: '#57534e', fontSize: '15px', lineHeight: '1.6' }}>
-            {inviterName} has invited you to collaborate on their family tree. Click below to accept the invitation.
+            {inviterName} has invited you to collaborate on their family tree. Click below to accept
+            the invitation.
           </Text>
           <Section style={{ textAlign: 'center', margin: '32px 0' }}>
             <Button
@@ -554,7 +591,10 @@ export default async function AcceptInvitePage({ searchParams }: Props) {
       <div className="max-w-sm w-full bg-white rounded-2xl shadow-sm border border-stone-100 p-8 text-center">
         <p className="text-stone-800 font-medium mb-2">Invitation error</p>
         <p className="text-stone-500 text-sm">{result.error}</p>
-        <a href="/dashboard" className="mt-6 inline-block text-sm text-stone-400 hover:text-stone-600">
+        <a
+          href="/dashboard"
+          className="mt-6 inline-block text-sm text-stone-400 hover:text-stone-600"
+        >
           Go to dashboard
         </a>
       </div>
@@ -566,6 +606,7 @@ export default async function AcceptInvitePage({ searchParams }: Props) {
 **Important:** Add `/invite` to the middleware matcher exclusion list so unauthenticated users reach the page (they'll be redirected to login from within the page itself):
 
 In `middleware.ts`, the matcher is:
+
 ```typescript
 export const config = {
   matcher: ['/dashboard/:path*', '/trees/:path*'],
@@ -596,18 +637,19 @@ export async function getUserTrees() {
 
   // Trees shared with the user (accepted memberships)
   const memberships = await db.query.treeMembers.findMany({
-    where: and(
-      eq(treeMembers.userId, user.id),
-      eq(treeMembers.status, 'accepted')
-    ),
+    where: and(eq(treeMembers.userId, user.id), eq(treeMembers.status, 'accepted')),
   })
 
-  const sharedTrees = memberships.length > 0
-    ? await db.query.trees.findMany({
-        where: inArray(trees.id, memberships.map((m) => m.treeId)),
-        orderBy: (t, { desc }) => [desc(t.createdAt)],
-      })
-    : []
+  const sharedTrees =
+    memberships.length > 0
+      ? await db.query.trees.findMany({
+          where: inArray(
+            trees.id,
+            memberships.map((m) => m.treeId)
+          ),
+          orderBy: (t, { desc }) => [desc(t.createdAt)],
+        })
+      : []
 
   return [
     ...ownTrees.map((t) => ({ ...t, isShared: false })),
@@ -621,11 +663,13 @@ export async function getUserTrees() {
 In the tree card component, conditionally render a "Shared" badge when `isShared === true`:
 
 ```tsx
-{tree.isShared && (
-  <span className="text-[10px] font-medium uppercase tracking-widest text-stone-400 border border-stone-200 rounded-full px-2 py-0.5">
-    Shared
-  </span>
-)}
+{
+  tree.isShared && (
+    <span className="text-[10px] font-medium uppercase tracking-widest text-stone-400 border border-stone-200 rounded-full px-2 py-0.5">
+      Shared
+    </span>
+  )
+}
 ```
 
 ---
@@ -668,7 +712,8 @@ Pending invitations that are past `expiresAt` should be cleaned up lazily: in `g
 
 ```typescript
 // At the start of getTreeMembers, expire stale invitations
-await db.update(treeMembers)
+await db
+  .update(treeMembers)
   .set({ status: 'revoked' })
   .where(
     and(
@@ -691,7 +736,9 @@ import { db } from '@/lib/db'
 import { trees } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 
-export async function canDeleteAccount(userId: string): Promise<{ canDelete: boolean; reason?: string }> {
+export async function canDeleteAccount(
+  userId: string
+): Promise<{ canDelete: boolean; reason?: string }> {
   const userTrees = await db.query.trees.findMany({
     where: eq(trees.userId, userId),
     columns: { id: true },
@@ -702,7 +749,8 @@ export async function canDeleteAccount(userId: string): Promise<{ canDelete: boo
     if (slots > 0) {
       return {
         canDelete: false,
-        reason: 'You have trees with active collaborators. Remove all collaborators or delete the trees before deleting your account.',
+        reason:
+          'You have trees with active collaborators. Remove all collaborators or delete the trees before deleting your account.',
       }
     }
   }
@@ -717,18 +765,18 @@ Surface this check in the UI before confirming account deletion. Do not silently
 
 ## Implementation Order
 
-| # | Status | Phase | Task |
-|---|---|---|---|
-| 1 | [ ] | 1 | Schema: add `memberStatusEnum`, `tree_members` table, `createdBy` on `persons`/`unions`/`parentage` → `pnpm db:push` |
-| 2 | [ ] | 2 | Create `lib/tree-access.ts` with `requireTreeAccess`, `requireTreeAdmin`, `getActiveSlotCount` |
-| 3 | [ ] | 3 | Refactor `server/persons.ts` and `server/relationships.ts`: swap ownership checks for `requireTreeAccess`, pass `createdBy` on inserts |
-| 4 | [ ] | 3 | Refactor `server/trees.ts`: update `getTree` and `updateTree` to use `requireTreeAccess` |
-| 5 | [ ] | 5 | Install Resend (`pnpm add resend react-email @react-email/components`), create `lib/email.ts` and `emails/invitation.tsx` |
-| 6 | [ ] | 4 | Create `server/collaboration.ts`: `inviteCollaborator`, `acceptInvitation`, `removeMember`, `getTreeMembers` |
-| 7 | [ ] | 6 | Create `app/invite/accept/page.tsx` — public accept route with auth redirect |
-| 8 | [ ] | 7 | Update `getUserTrees` to union own + shared trees; add `isShared` badge to dashboard card |
-| 9 | [ ] | 8 | Build `CollaboratorsPanel` component; wire into tree settings page |
-| 10 | [ ] | 9 | Add `canDeleteAccount` guard; surface in account deletion UI |
+| #   | Status | Phase | Task                                                                                                                                   |
+| --- | ------ | ----- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | [ ]    | 1     | Schema: add `memberStatusEnum`, `tree_members` table, `createdBy` on `persons`/`unions`/`parentage` → `pnpm db:push`                   |
+| 2   | [ ]    | 2     | Create `lib/tree-access.ts` with `requireTreeAccess`, `requireTreeAdmin`, `getActiveSlotCount`                                         |
+| 3   | [ ]    | 3     | Refactor `server/persons.ts` and `server/relationships.ts`: swap ownership checks for `requireTreeAccess`, pass `createdBy` on inserts |
+| 4   | [ ]    | 3     | Refactor `server/trees.ts`: update `getTree` and `updateTree` to use `requireTreeAccess`                                               |
+| 5   | [ ]    | 5     | Install Resend (`pnpm add resend react-email @react-email/components`), create `lib/email.ts` and `emails/invitation.tsx`              |
+| 6   | [ ]    | 4     | Create `server/collaboration.ts`: `inviteCollaborator`, `acceptInvitation`, `removeMember`, `getTreeMembers`                           |
+| 7   | [ ]    | 6     | Create `app/invite/accept/page.tsx` — public accept route with auth redirect                                                           |
+| 8   | [ ]    | 7     | Update `getUserTrees` to union own + shared trees; add `isShared` badge to dashboard card                                              |
+| 9   | [ ]    | 8     | Build `CollaboratorsPanel` component; wire into tree settings page                                                                     |
+| 10  | [ ]    | 9     | Add `canDeleteAccount` guard; surface in account deletion UI                                                                           |
 
 **Status values:** `[ ]` not started · `[~]` in progress · `[x]` completed · `[!]` blocked
 
@@ -736,14 +784,14 @@ Surface this check in the UI before confirming account deletion. Do not silently
 
 ## Key Constraints
 
-| Constraint | Detail |
-|---|---|
-| `pnpm` only | Never use `npm` or `yarn` |
-| Better Auth only | Never use `devSession` from `@/lib/dev-session` |
-| Auth in Server Components | Use `requireUser()` from `@/lib/get-session` |
-| Auth in Client Components | Use `authClient` from `@/lib/auth-client` |
-| Next.js 16 has breaking changes | Read `node_modules/next/dist/docs/` before writing any route or middleware code |
-| All server actions return `Result<T>` | Never throw errors to the client — catch and return `{ success: false, error: string }` |
-| Slot limit is enforced server-side only | Do not rely on client-side checks |
-| `inviteToken` = `crypto.randomUUID()` | Native, no external library needed |
+| Constraint                               | Detail                                                                                                    |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `pnpm` only                              | Never use `npm` or `yarn`                                                                                 |
+| Better Auth only                         | Never use `devSession` from `@/lib/dev-session`                                                           |
+| Auth in Server Components                | Use `requireUser()` from `@/lib/get-session`                                                              |
+| Auth in Client Components                | Use `authClient` from `@/lib/auth-client`                                                                 |
+| Next.js 16 has breaking changes          | Read `node_modules/next/dist/docs/` before writing any route or middleware code                           |
+| All server actions return `Result<T>`    | Never throw errors to the client — catch and return `{ success: false, error: string }`                   |
+| Slot limit is enforced server-side only  | Do not rely on client-side checks                                                                         |
+| `inviteToken` = `crypto.randomUUID()`    | Native, no external library needed                                                                        |
 | `expiresAt` comparison uses `new Date()` | Timestamps in the DB use `timestamp` type (not text), so JS `Date` comparisons work directly with Drizzle |
