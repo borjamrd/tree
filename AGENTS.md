@@ -73,6 +73,10 @@ type Result<T = void> = { success: true; data?: T } | { success: false; error: s
 
 Always call `requireUser()` first. Use Zod to parse input. Call `revalidatePath` after mutations.
 
+## Development Flow
+
+Use `/feature-flow "feature name"` to start or resume a feature. The skill orchestrates analysis → FRD → test planning → user confirmation → implementation → review. State persists in `.claude/features/<slug>/state.json` and outputs sync to Obsidian. Resume any interrupted feature by invoking the skill again with the same name.
+
 ## UI/UX & Design
 
 - **MANDATORY**: For ANY modification or creation of visual components, pages, or UI elements, you MUST follow the instructions in `.agents/skills/frontend-design/SKILL.md`.
