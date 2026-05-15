@@ -1,17 +1,17 @@
-# TRE — Genealogy Tree App: Implementation Plan
+# Treel — Genealogy Tree App: Implementation Plan
 
 ## Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript 5 (strict) |
-| Styling | Tailwind CSS v4 |
-| Database | PostgreSQL |
-| ORM | Drizzle ORM |
-| Auth | Better Auth |
-| Tree UI | React Flow |
-| Package manager | pnpm |
+| Layer           | Technology              |
+| --------------- | ----------------------- |
+| Framework       | Next.js 16 (App Router) |
+| Language        | TypeScript 5 (strict)   |
+| Styling         | Tailwind CSS v4         |
+| Database        | PostgreSQL              |
+| ORM             | Drizzle ORM             |
+| Auth            | Better Auth             |
+| Tree UI         | React Flow              |
+| Package manager | pnpm                    |
 
 ## Critical: Read Before Writing Any Next.js Code
 
@@ -153,16 +153,35 @@ File: `lib/db/schema.ts`
 
 ```typescript
 import {
-  pgTable, uuid, text, boolean, date, timestamp,
-  pgEnum, index, unique
+  pgTable,
+  uuid,
+  text,
+  boolean,
+  date,
+  timestamp,
+  pgEnum,
+  index,
+  unique,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
 export const genderEnum = pgEnum('gender', ['male', 'female', 'other', 'unknown'])
-export const unionTypeEnum = pgEnum('union_type', ['married', 'partnered', 'divorced', 'separated', 'unknown'])
-export const parentageTypeEnum = pgEnum('parentage_type', ['biological', 'adoptive', 'step', 'foster', 'unknown'])
+export const unionTypeEnum = pgEnum('union_type', [
+  'married',
+  'partnered',
+  'divorced',
+  'separated',
+  'unknown',
+])
+export const parentageTypeEnum = pgEnum('parentage_type', [
+  'biological',
+  'adoptive',
+  'step',
+  'foster',
+  'unknown',
+])
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 
@@ -185,14 +204,18 @@ export const sessions = pgTable('session', {
   updatedAt: timestamp('updated_at').notNull(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
 })
 
 export const accounts = pgTable('account', {
   id: text('id').primaryKey(),
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   accessToken: text('access_token'),
   refreshToken: text('refresh_token'),
   idToken: text('id_token'),
@@ -215,69 +238,97 @@ export const verifications = pgTable('verification', {
 
 // ─── Trees ───────────────────────────────────────────────────────────────────
 
-export const trees = pgTable('trees', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  description: text('description'),
-  isPublic: boolean('is_public').default(false).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (t) => [index('trees_user_idx').on(t.userId)])
+export const trees = pgTable(
+  'trees',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description'),
+    isPublic: boolean('is_public').default(false).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (t) => [index('trees_user_idx').on(t.userId)]
+)
 
 // ─── Persons ─────────────────────────────────────────────────────────────────
 
-export const persons = pgTable('persons', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  treeId: uuid('tree_id').notNull().references(() => trees.id, { onDelete: 'cascade' }),
-  firstName: text('first_name').notNull(),
-  lastName: text('last_name'),
-  maidenName: text('maiden_name'),
-  gender: genderEnum('gender').default('unknown').notNull(),
-  birthDate: date('birth_date'),
-  birthPlace: text('birth_place'),
-  deathDate: date('death_date'),
-  deathPlace: text('death_place'),
-  isAlive: boolean('is_alive').default(true).notNull(),
-  photoUrl: text('photo_url'),
-  bio: text('bio'),
-  // Canvas position for React Flow
-  posX: text('pos_x').default('0'),
-  posY: text('pos_y').default('0'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (t) => [index('persons_tree_idx').on(t.treeId)])
+export const persons = pgTable(
+  'persons',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    treeId: uuid('tree_id')
+      .notNull()
+      .references(() => trees.id, { onDelete: 'cascade' }),
+    firstName: text('first_name').notNull(),
+    lastName: text('last_name'),
+    maidenName: text('maiden_name'),
+    gender: genderEnum('gender').default('unknown').notNull(),
+    birthDate: date('birth_date'),
+    birthPlace: text('birth_place'),
+    deathDate: date('death_date'),
+    deathPlace: text('death_place'),
+    isAlive: boolean('is_alive').default(true).notNull(),
+    photoUrl: text('photo_url'),
+    bio: text('bio'),
+    // Canvas position for React Flow
+    posX: text('pos_x').default('0'),
+    posY: text('pos_y').default('0'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => [index('persons_tree_idx').on(t.treeId)]
+)
 
 // ─── Unions ──────────────────────────────────────────────────────────────────
 // Represents a couple (or single-parent unit). Core entity for genealogy.
 // person2Id is nullable to support single-parent families.
 
-export const unions = pgTable('unions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  treeId: uuid('tree_id').notNull().references(() => trees.id, { onDelete: 'cascade' }),
-  person1Id: uuid('person1_id').notNull().references(() => persons.id, { onDelete: 'cascade' }),
-  person2Id: uuid('person2_id').references(() => persons.id, { onDelete: 'set null' }),
-  type: unionTypeEnum('type').default('unknown').notNull(),
-  startDate: date('start_date'),
-  endDate: date('end_date'),
-  notes: text('notes'),
-  // Canvas position for the virtual union node in React Flow
-  posX: text('pos_x').default('0'),
-  posY: text('pos_y').default('0'),
-}, (t) => [index('unions_tree_idx').on(t.treeId)])
+export const unions = pgTable(
+  'unions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    treeId: uuid('tree_id')
+      .notNull()
+      .references(() => trees.id, { onDelete: 'cascade' }),
+    person1Id: uuid('person1_id')
+      .notNull()
+      .references(() => persons.id, { onDelete: 'cascade' }),
+    person2Id: uuid('person2_id').references(() => persons.id, { onDelete: 'set null' }),
+    type: unionTypeEnum('type').default('unknown').notNull(),
+    startDate: date('start_date'),
+    endDate: date('end_date'),
+    notes: text('notes'),
+    // Canvas position for the virtual union node in React Flow
+    posX: text('pos_x').default('0'),
+    posY: text('pos_y').default('0'),
+  },
+  (t) => [index('unions_tree_idx').on(t.treeId)]
+)
 
 // ─── Parentage ───────────────────────────────────────────────────────────────
 // Links a child to the union that produced them.
 
-export const parentage = pgTable('parentage', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  childId: uuid('child_id').notNull().references(() => persons.id, { onDelete: 'cascade' }),
-  unionId: uuid('union_id').notNull().references(() => unions.id, { onDelete: 'cascade' }),
-  type: parentageTypeEnum('type').default('biological').notNull(),
-}, (t) => [
-  index('parentage_child_idx').on(t.childId),
-  index('parentage_union_idx').on(t.unionId),
-  unique('unique_child_union').on(t.childId, t.unionId),
-])
+export const parentage = pgTable(
+  'parentage',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    childId: uuid('child_id')
+      .notNull()
+      .references(() => persons.id, { onDelete: 'cascade' }),
+    unionId: uuid('union_id')
+      .notNull()
+      .references(() => unions.id, { onDelete: 'cascade' }),
+    type: parentageTypeEnum('type').default('biological').notNull(),
+  },
+  (t) => [
+    index('parentage_child_idx').on(t.childId),
+    index('parentage_union_idx').on(t.unionId),
+    unique('unique_child_union').on(t.childId, t.unionId),
+  ]
+)
 
 // ─── Relations (Drizzle query API) ───────────────────────────────────────────
 
@@ -295,8 +346,16 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
 
 export const unionsRelations = relations(unions, ({ one, many }) => ({
   tree: one(trees, { fields: [unions.treeId], references: [trees.id] }),
-  person1: one(persons, { fields: [unions.person1Id], references: [persons.id], relationName: 'person1' }),
-  person2: one(persons, { fields: [unions.person2Id], references: [persons.id], relationName: 'person2' }),
+  person1: one(persons, {
+    fields: [unions.person1Id],
+    references: [persons.id],
+    relationName: 'person1',
+  }),
+  person2: one(persons, {
+    fields: [unions.person2Id],
+    references: [persons.id],
+    relationName: 'person2',
+  }),
   children: many(parentage),
 }))
 
@@ -319,75 +378,72 @@ pnpm db:push
 ### `lib/auth.ts` (Server)
 
 ```typescript
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { db } from '@/lib/db'
+import * as schema from '@/lib/db/schema'
 
 export const auth = betterAuth({
-    database: drizzleAdapter(db, {
-        provider: "pg",
-        schema: schema,
-    }),
-    emailAndPassword: {
-        enabled: true,
-    },
-    // socialProviders: {
-    //    github: {
-    //        clientId: process.env.GITHUB_CLIENT_ID!,
-    //        clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    //    }
-    // }
-});
+  database: drizzleAdapter(db, {
+    provider: 'pg',
+    schema: schema,
+  }),
+  emailAndPassword: {
+    enabled: true,
+  },
+  // socialProviders: {
+  //    github: {
+  //        clientId: process.env.GITHUB_CLIENT_ID!,
+  //        clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+  //    }
+  // }
+})
 ```
 
 ### `lib/auth-client.ts` (Client)
 
 ```typescript
-import { createAuthClient } from "better-auth/react"
+import { createAuthClient } from 'better-auth/react'
 
 export const authClient = createAuthClient({
-    baseURL: process.env.BETTER_AUTH_URL
+  baseURL: process.env.BETTER_AUTH_URL,
 })
 ```
 
 ### `app/api/auth/[...all]/route.ts`
 
 ```typescript
-import { auth } from "@/lib/auth";
-import { toNextJsHandler } from "better-auth/next-js";
+import { auth } from '@/lib/auth'
+import { toNextJsHandler } from 'better-auth/next-js'
 
-export const { POST, GET } = toNextJsHandler(auth);
+export const { POST, GET } = toNextJsHandler(auth)
 ```
 
 ### Middleware (`middleware.ts` at project root)
 
 ```typescript
-import { betterFetch } from "@better-auth/fetch";
-import { NextResponse, type NextRequest } from "next/server";
-import type { Session } from "better-auth/types";
+import { betterFetch } from '@better-auth/fetch'
+import { NextResponse, type NextRequest } from 'next/server'
+import type { Session } from 'better-auth/types'
 
 export default async function authMiddleware(request: NextRequest) {
-	const { data: session } = await betterFetch<Session>(
-		"/api/auth/get-session",
-		{
-			baseURL: request.nextUrl.origin,
-			headers: {
-				//get the cookie from the request
-				cookie: request.headers.get("cookie") || "",
-			},
-		},
-	);
+  const { data: session } = await betterFetch<Session>('/api/auth/get-session', {
+    baseURL: request.nextUrl.origin,
+    headers: {
+      //get the cookie from the request
+      cookie: request.headers.get('cookie') || '',
+    },
+  })
 
-	if (!session) {
-		return NextResponse.redirect(new URL("/login", request.url));
-	}
-	return NextResponse.next();
+  if (!session) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+  return NextResponse.next()
 }
 
 export const config = {
-	matcher: ["/dashboard/:path*", "/trees/:path*"],
-};
+  matcher: ['/dashboard/:path*', '/trees/:path*'],
+}
 ```
 
 ### Auth pages
@@ -431,10 +487,13 @@ export async function createTree(input: z.infer<typeof createTreeSchema>) {
   if (!session?.user?.id) throw new Error('Unauthorized')
 
   const data = createTreeSchema.parse(input)
-  const [tree] = await db.insert(trees).values({
-    ...data,
-    userId: session.user.id,
-  }).returning()
+  const [tree] = await db
+    .insert(trees)
+    .values({
+      ...data,
+      userId: session.user.id,
+    })
+    .returning()
 
   revalidatePath('/dashboard')
   return tree
@@ -458,9 +517,7 @@ export async function deleteTree(treeId: string) {
   })
   if (!session?.user?.id) throw new Error('Unauthorized')
 
-  await db.delete(trees).where(
-    and(eq(trees.id, treeId), eq(trees.userId, session.user.id))
-  )
+  await db.delete(trees).where(and(eq(trees.id, treeId), eq(trees.userId, session.user.id)))
   revalidatePath('/dashboard')
 }
 ```
@@ -469,26 +526,26 @@ export async function deleteTree(treeId: string) {
 
 Actions to implement:
 
-| Action | Description |
-|---|---|
-| `createPerson(treeId, data)` | Add person to tree. Verify tree ownership. |
-| `updatePerson(personId, data)` | Update person fields. |
-| `deletePerson(personId)` | Delete person (cascades to unions + parentage). |
-| `updatePersonPosition(personId, x, y)` | Update canvas position from React Flow drag. |
-| `getTreePersons(treeId)` | Return all persons for a tree. |
+| Action                                 | Description                                     |
+| -------------------------------------- | ----------------------------------------------- |
+| `createPerson(treeId, data)`           | Add person to tree. Verify tree ownership.      |
+| `updatePerson(personId, data)`         | Update person fields.                           |
+| `deletePerson(personId)`               | Delete person (cascades to unions + parentage). |
+| `updatePersonPosition(personId, x, y)` | Update canvas position from React Flow drag.    |
+| `getTreePersons(treeId)`               | Return all persons for a tree.                  |
 
 ### `server/relationships.ts`
 
 Actions to implement:
 
-| Action | Description |
-|---|---|
-| `createUnion(treeId, person1Id, person2Id?, type)` | Create a couple/union. |
-| `updateUnion(unionId, data)` | Update union details. |
-| `deleteUnion(unionId)` | Delete union (cascades to parentage). |
-| `addChild(unionId, childId, parentageType)` | Link a child to a union. |
-| `removeChild(parentageId)` | Remove child from union. |
-| `getTreeRelationships(treeId)` | Return all unions + parentage for a tree. |
+| Action                                             | Description                               |
+| -------------------------------------------------- | ----------------------------------------- |
+| `createUnion(treeId, person1Id, person2Id?, type)` | Create a couple/union.                    |
+| `updateUnion(unionId, data)`                       | Update union details.                     |
+| `deleteUnion(unionId)`                             | Delete union (cascades to parentage).     |
+| `addChild(unionId, childId, parentageType)`        | Link a child to a union.                  |
+| `removeChild(parentageId)`                         | Remove child from union.                  |
+| `getTreeRelationships(treeId)`                     | Return all unions + parentage for a tree. |
 
 ---
 
@@ -500,18 +557,19 @@ This is the most complex phase. Follow these steps carefully.
 
 The tree canvas has **three node types**:
 
-| Type | Maps to | Visual |
-|---|---|---|
-| `person` | `persons` table row | Card with name, dates, photo |
-| `union` | `unions` table row | Small diamond/dot node |
-| `parentage-edge` | Rendered as edge | Line from union node to child node |
-| `partner-edge` | Rendered as edge | Line from person1 to union to person2 |
+| Type             | Maps to             | Visual                                |
+| ---------------- | ------------------- | ------------------------------------- |
+| `person`         | `persons` table row | Card with name, dates, photo          |
+| `union`          | `unions` table row  | Small diamond/dot node                |
+| `parentage-edge` | Rendered as edge    | Line from union node to child node    |
+| `partner-edge`   | Rendered as edge    | Line from person1 to union to person2 |
 
 ### `components/tree/TreeCanvas.tsx`
 
 This is the main React Flow canvas. It is a **Client Component** (`'use client'`).
 
 Steps:
+
 1. Receive `persons`, `unions`, `parentage` as props (fetched server-side in the page)
 2. Transform them into React Flow `nodes` and `edges` arrays (see transformer below)
 3. Render `<ReactFlow>` with custom node types
@@ -524,7 +582,7 @@ Steps:
 // lib/tree-transform.ts
 import type { Node, Edge } from '@xyflow/react'
 
-export function treeToFlow(persons, unions, parentage): { nodes: Node[], edges: Edge[] } {
+export function treeToFlow(persons, unions, parentage): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
 
@@ -714,6 +772,7 @@ async function downloadCard(ref: React.RefObject<HTMLDivElement>, name: string) 
 ### App layout (`app/(app)/layout.tsx`)
 
 Minimal sidebar:
+
 - App logo/name
 - Link to Dashboard
 - Link to current tree (if any)
@@ -768,14 +827,14 @@ pnpm dlx shadcn@latest add button input label dialog select sheet toast
 
 ## Key Constraints & Decisions
 
-| Decision | Rationale |
-|---|---|
-| Union node as first-class entity | Required for correct half-sibling modeling |
-| Canvas position stored in DB | Persists layout across sessions |
-| Server Actions over API routes | Simpler, type-safe, colocated with data |
-| No client-side state management (no Zustand/Redux) | Server Actions + React state is sufficient |
-| pnpm only | Do not use npm or yarn commands |
-| `person2Id` nullable in unions | Supports single-parent families without hacks |
+| Decision                                           | Rationale                                     |
+| -------------------------------------------------- | --------------------------------------------- |
+| Union node as first-class entity                   | Required for correct half-sibling modeling    |
+| Canvas position stored in DB                       | Persists layout across sessions               |
+| Server Actions over API routes                     | Simpler, type-safe, colocated with data       |
+| No client-side state management (no Zustand/Redux) | Server Actions + React state is sufficient    |
+| pnpm only                                          | Do not use npm or yarn commands               |
+| `person2Id` nullable in unions                     | Supports single-parent families without hacks |
 
 ---
 

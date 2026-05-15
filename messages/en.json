@@ -10,7 +10,7 @@
   },
   "nav": {
     "dashboard": "Dashboard",
-    "appName": "Tre"
+    "appName": "Treel"
   },
   "dashboard": {
     "title": "Your Lineage",
@@ -193,7 +193,7 @@
       "ctaSecondary": "Sign In"
     },
     "features": {
-      "label": "What TRE offers",
+      "label": "What Treel offers",
       "title": "Everything your heritage deserves",
       "items": [
         {

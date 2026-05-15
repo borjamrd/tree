@@ -10,7 +10,7 @@
   },
   "nav": {
     "dashboard": "Panel",
-    "appName": "Tre"
+    "appName": "Treel"
   },
   "dashboard": {
     "title": "Tu linaje",
@@ -193,7 +193,7 @@
       "ctaSecondary": "Iniciar sesión"
     },
     "features": {
-      "label": "Lo que ofrece TRE",
+      "label": "Lo que ofrece Treel",
       "title": "Todo lo que tu herencia merece",
       "items": [
         {

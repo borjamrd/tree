@@ -22,7 +22,7 @@ const crimson = Crimson_Pro({
 })
 
 export const metadata: Metadata = {
-  title: 'TRE — Your Family History',
+  title: 'Treel — Your Family History',
   description: 'Preserve, visualize, and share your family tree across generations.',
 }
 
@@ -43,9 +43,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={`${cormorant.variable} ${crimson.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider messages={messages}>
-          {children}
-        </NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
         <Toaster position="bottom-right" richColors />
       </body>
     </html>

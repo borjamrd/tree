@@ -61,7 +61,7 @@ export default async function Home() {
         style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}
       >
         <span className="font-[family-name:var(--font-display)] text-xs tracking-[0.4em] uppercase text-[var(--sepia)]">
-          TRE
+          TREEL
         </span>
         <nav className="flex items-center gap-8">
           <Link
@@ -111,7 +111,7 @@ export default async function Home() {
             animationFillMode: 'forwards',
           }}
         >
-          TRE
+          TREEL
         </h1>
 
         {/* Tagline */}
@@ -361,7 +361,7 @@ export default async function Home() {
       {/* ── Footer ────────────────────────────────────────────── */}
       <footer className="flex items-center px-10 py-6 border-t border-[var(--rule)]">
         <span className="font-[family-name:var(--font-body)] text-xs tracking-widest text-[var(--rule)]">
-          TRE — Genealogy
+          TREEL — Genealogy
         </span>
         <div className="flex-1 mx-8 h-px bg-[var(--parchment-mid)]" />
         <span className="font-[family-name:var(--font-body)] text-xs tracking-widest text-[var(--rule)]">
