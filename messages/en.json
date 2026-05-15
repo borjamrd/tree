@@ -75,7 +75,8 @@
   },
   "deletePersonButton": {
     "trigger": "Delete person",
-    "confirm": "Are you sure you want to delete this person?"
+    "confirm": "Are you sure you want to delete this person?",
+    "successToast": "The person has been removed"
   },
   "personDetailPage": {
     "backToTree": "Back to tree",
@@ -98,7 +99,8 @@
     "gender": "Gender",
     "bio": "Biography",
     "alive": "Alive",
-    "deceased": "Deceased"
+    "deceased": "Deceased",
+    "export": "Export Card"
   },
   "personSidebar": {
     "noDetails": "No details recorded yet.",
