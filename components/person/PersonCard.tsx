@@ -2,7 +2,7 @@
 import { useRef } from 'react'
 import Image from 'next/image'
 import { toPng } from 'html-to-image'
-import { Download } from 'lucide-react'
+import { Download, User } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 type Person = {

@@ -18,7 +18,7 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
-    
+
     const formData = new FormData(e.currentTarget)
     const name = formData.get('name') as string
     const email = formData.get('email') as string
@@ -45,7 +45,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-stone-100 p-8">
         <div className="flex items-center gap-2 mb-8">
           <TreePine className="w-5 h-5 text-stone-600" />
-          <span className="font-semibold text-stone-800 text-lg">Tre</span>
+          <span className="font-semibold text-stone-800 text-lg">Treel</span>
         </div>
 
         <h1 className="text-xl font-semibold text-stone-800 mb-1">{t('title')}</h1>
@@ -62,7 +62,14 @@ export default function RegisterPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">{t('password')}</Label>
-            <Input id="password" name="password" type="password" minLength={8} required placeholder="Min. 8 characters" />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              minLength={8}
+              required
+              placeholder="Min. 8 characters"
+            />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('submit')}

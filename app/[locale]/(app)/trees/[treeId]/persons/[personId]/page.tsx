@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation'
 import { PersonCard } from '@/components/person/PersonCard'
 import { DeletePersonButton } from '@/components/person/DeletePersonButton'
 import { Link } from '@/i18n/navigation'
-import { ArrowLeft, Pencil, User, History } from 'lucide-react'
+import { ArrowLeft, Pencil, MapPin, History, AlignLeft, Sparkles } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 export default async function PersonDetailPage({
