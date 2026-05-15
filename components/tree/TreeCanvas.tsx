@@ -435,7 +435,7 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
         fitView
       >
         <Controls showInteractive={false} />
-        <Background variant={BackgroundVariant.Dots} gap={28} size={1} color="#D4C9B5" />
+        <Background variant={BackgroundVariant.Dots} gap={28} size={1} color="var(--rule-light)" />
       </ReactFlow>
 
       {/* Transparent backdrop — closes any open sidebar on outside click */}

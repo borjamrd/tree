@@ -19,9 +19,9 @@ type PersonData = {
 }
 
 function accentColor(gender?: string | null) {
-  if (gender === 'male')   return '#C4A252' // gold
+  if (gender === 'male') return '#C4A252' // gold
   if (gender === 'female') return '#9E7B5A' // dark sepia
-  return '#D4C9B5'                          // rule
+  return '#D4C9B5' // rule
 }
 
 const handleCls = (color: string) =>
@@ -52,23 +52,32 @@ export function PersonNode({ data }: NodeProps) {
         background: 'var(--parchment)',
         border: d.isSelf ? `1.5px solid ${selfColor}` : '1px solid var(--rule)',
         boxShadow: d.isSelf
-          ? `0 2px 12px rgba(107,143,113,0.18), 0 1px 3px rgba(107,143,113,0.12)`
-          : '0 2px 12px rgba(28,21,16,0.07), 0 1px 3px rgba(28,21,16,0.04)',
+          ? `0 4px 20px rgba(107,143,113,0.2), 0 2px 6px rgba(107,143,113,0.15)`
+          : '0 4px 20px rgba(28,21,16,0.1), 0 2px 6px rgba(28,21,16,0.06)',
       }}
     >
       {/* Gender accent bar */}
       <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: accent }} />
 
       <Handle
-        type="source" id="top" position={Position.Top} title="Add parent"
+        type="source"
+        id="top"
+        position={Position.Top}
+        title="Add parent"
         className={`${handleCls(accent)} !bg-[var(--sepia)]`}
       />
       <Handle
-        type="source" id="left" position={Position.Left} title="Add partner"
+        type="source"
+        id="left"
+        position={Position.Left}
+        title="Add partner"
         className={`${handleCls(accent)} !bg-[var(--gold)]`}
       />
       <Handle
-        type="source" id="right" position={Position.Right} title="Add partner"
+        type="source"
+        id="right"
+        position={Position.Right}
+        title="Add partner"
         className={`${handleCls(accent)} !bg-[var(--gold)]`}
       />
 
@@ -143,7 +152,10 @@ export function PersonNode({ data }: NodeProps) {
       </button>
 
       <Handle
-        type="source" id="bottom" position={Position.Bottom} title="Add child"
+        type="source"
+        id="bottom"
+        position={Position.Bottom}
+        title="Add child"
         className={`${handleCls(accent)} !bg-[var(--sepia)]`}
       />
     </div>

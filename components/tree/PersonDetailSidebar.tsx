@@ -195,10 +195,10 @@ export function PersonDetailSidebar({
     <div
       className="absolute top-0 right-0 h-full flex flex-col z-10"
       style={{
-        width: 288,
+        width: 320,
         background: 'var(--parchment)',
         borderLeft: '1px solid var(--rule)',
-        boxShadow: '-4px 0 24px rgba(28,21,16,0.06)',
+        boxShadow: '-8px 0 32px rgba(28,21,16,0.12), -2px 0 8px rgba(28,21,16,0.06)',
       }}
     >
       {/* Accent bar */}

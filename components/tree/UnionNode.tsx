@@ -20,7 +20,7 @@ export function UnionNode({ data }: NodeProps) {
           background: 'var(--gold)',
           transform: 'rotate(45deg)',
           border: '1.5px solid var(--parchment)',
-          boxShadow: '0 1px 4px rgba(28,21,16,0.15)',
+          boxShadow: '0 2px 8px rgba(28,21,16,0.2)',
           transition: 'background 0.2s',
         }}
       />

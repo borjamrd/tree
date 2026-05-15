@@ -42,7 +42,12 @@ export function AddPersonSidebar({ treeId, onClose }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<PersonInput>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<PersonInput>({
     resolver: zodResolver(personSchema),
     defaultValues: { gender: 'unknown', isAlive: true },
   })
@@ -68,11 +73,14 @@ export function AddPersonSidebar({ treeId, onClose }: Props) {
         width: 320,
         background: 'var(--parchment)',
         borderLeft: '1px solid var(--rule)',
-        boxShadow: '-4px 0 24px rgba(28,21,16,0.06)',
+        boxShadow: '-8px 0 32px rgba(28,21,16,0.12), -2px 0 8px rgba(28,21,16,0.06)',
       }}
     >
       {/* Accent bar */}
-      <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: '#D4C9B5' }} />
+      <div
+        className="absolute left-0 top-0 bottom-0 w-[3px]"
+        style={{ backgroundColor: '#D4C9B5' }}
+      />
 
       {/* Header */}
       <div className="pl-5 pr-4 pt-5 pb-4" style={{ borderBottom: '1px solid var(--rule)' }}>
@@ -119,7 +127,6 @@ export function AddPersonSidebar({ treeId, onClose }: Props) {
       {/* Form body */}
       <div className="flex-1 overflow-y-auto px-5 py-5">
         <form id="add-person-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
           {/* First name */}
           <div>
             <label style={labelStyle}>{tForm('firstName')}</label>
@@ -127,11 +134,22 @@ export function AddPersonSidebar({ treeId, onClose }: Props) {
               {...register('firstName')}
               placeholder="e.g. Eleanor"
               style={inputStyle}
-              onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-              onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--sepia)'
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--rule)'
+              }}
             />
             {errors.firstName && (
-              <p style={{ fontSize: 10, color: '#b45309', marginTop: 3, fontFamily: 'var(--font-body)' }}>
+              <p
+                style={{
+                  fontSize: 10,
+                  color: '#b45309',
+                  marginTop: 3,
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
                 {errors.firstName.message}
               </p>
             )}
@@ -144,8 +162,12 @@ export function AddPersonSidebar({ treeId, onClose }: Props) {
               <input
                 {...register('lastName')}
                 style={inputStyle}
-                onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-                onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--sepia)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--rule)'
+                }}
               />
             </div>
             <div>
@@ -153,8 +175,12 @@ export function AddPersonSidebar({ treeId, onClose }: Props) {
               <input
                 {...register('lastName2')}
                 style={inputStyle}
-                onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-                onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--sepia)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--rule)'
+                }}
               />
             </div>
           </div>
@@ -165,8 +191,12 @@ export function AddPersonSidebar({ treeId, onClose }: Props) {
             <select
               {...register('gender')}
               style={{ ...inputStyle, cursor: 'pointer' }}
-              onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-              onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--sepia)'
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--rule)'
+              }}
             >
               <option value="unknown">{tForm('genderUnknown')}</option>
               <option value="male">{tForm('genderMale')}</option>
@@ -178,7 +208,10 @@ export function AddPersonSidebar({ treeId, onClose }: Props) {
           {/* Ornamental divider */}
           <div className="flex items-center gap-3 py-1">
             <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
-            <div className="w-1.5 h-1.5 rotate-45" style={{ background: 'var(--rule)', borderRadius: 0.5 }} />
+            <div
+              className="w-1.5 h-1.5 rotate-45"
+              style={{ background: 'var(--rule)', borderRadius: 0.5 }}
+            />
             <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
           </div>
 
@@ -190,8 +223,12 @@ export function AddPersonSidebar({ treeId, onClose }: Props) {
                 type="date"
                 {...register('birthDate')}
                 style={inputStyle}
-                onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-                onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--sepia)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--rule)'
+                }}
               />
             </div>
             <div>
@@ -200,8 +237,12 @@ export function AddPersonSidebar({ treeId, onClose }: Props) {
                 {...register('birthPlace')}
                 style={inputStyle}
                 placeholder="Ciudad, País"
-                onFocus={(e) => { e.target.style.borderColor = 'var(--sepia)' }}
-                onBlur={(e) => { e.target.style.borderColor = 'var(--rule)' }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--sepia)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--rule)'
+                }}
               />
             </div>
           </div>

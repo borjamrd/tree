@@ -1,14 +1,16 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --parchment: #F2EDE3;
-  --parchment-mid: #E8E0D0;
-  --ink: #1C1510;
-  --sepia: #7D6545;
-  --gold: #C4A252;
-  --gold-light: #E8D5A3;
-  --rule: #D4C9B5;
-  --background: var(--parchment);
+  --parchment: #f2ede3;
+  --parchment-mid: #e8e0d0;
+  --parchment-pale: #f8f6f3;
+  --ink: #1c1510;
+  --sepia: #7d6545;
+  --gold: #c4a252;
+  --gold-light: #e8d5a3;
+  --rule: #d4c9b5;
+  --rule-light: #e5dfd3;
+  --background: var(--parchment-pale);
   --foreground: var(--ink);
 }
 
@@ -21,7 +23,9 @@
   --color-gold-light: var(--gold-light);
   --color-parchment: var(--parchment);
   --color-parchment-mid: var(--parchment-mid);
+  --color-parchment-pale: var(--parchment-pale);
   --color-rule: var(--rule);
+  --color-rule-light: var(--rule-light);
   --font-display: var(--font-display);
   --font-body: var(--font-body);
 }
@@ -44,8 +48,12 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleIn {
@@ -76,7 +84,11 @@ body {
 
 /* ── ReactFlow canvas overrides ─────────────────────────────── */
 .react-flow {
-  background: var(--parchment) !important;
+  background: var(--parchment-pale) !important;
+}
+.react-flow__pane {
+  background-image: radial-gradient(circle at 1px 1px, var(--rule-light) 1px, transparent 0);
+  background-size: 28px 28px;
 }
 .react-flow__controls {
   box-shadow: none !important;
@@ -117,7 +129,9 @@ body {
 
 @media print {
   /* Hide everything except portrait cards */
-  body > *:not(.print-cards) { display: none !important; }
+  body > *:not(.print-cards) {
+    display: none !important;
+  }
 
   .print-cards {
     display: grid !important;
