@@ -47,7 +47,35 @@ Files: `analysis.md`, `functional_doc.md`, `test_plan.md`, `review.md`.
 2. Check if `.claude/features/<slug>/state.json` exists.
    - **Exists and status is not `completed`**: Read it. Tell the user: "Resuming feature '<name>' — current step: '<current_step>'." Jump directly to that phase.
    - **Exists and status is `completed`**: Tell the user the feature is already completed and show the output paths.
-   - **Does not exist**: Create the directory `.claude/features/<slug>/`, write initial state with all steps `pending` and `current_step` as `analysis`. Proceed to Analysis.
+   - **Does not exist**: Proceed to Triage.
+
+---
+
+## Phase 0 — Triage
+
+Do not create a state file yet. Assess the complexity of the request based on the feature description and a quick read of the codebase if needed.
+
+Classify as **simple** or **complex** using these criteria:
+
+| Simple                           | Complex                                |
+| -------------------------------- | -------------------------------------- |
+| Single file or component change  | Multiple files across layers           |
+| No DB schema changes             | DB schema changes required             |
+| No new routes or pages           | New routes, pages, or server actions   |
+| UI tweak, copy change, style fix | New domain logic or user flows         |
+| Isolated bug fix                 | Cross-cutting concerns or dependencies |
+
+**If simple**: Tell the user:
+
+> "This looks straightforward — [one sentence explaining why]. No planning needed. Proceeding directly to implementation."
+
+Then implement immediately without creating any state file or documents.
+
+**If complex**: Tell the user:
+
+> "This feature has meaningful scope — [one sentence explaining why]. I'll run the full planning flow to make sure we get it right."
+
+Then create `.claude/features/<slug>/`, write initial state with all steps `pending` and `current_step` as `analysis`. Proceed to Phase 1.
 
 ---
 
