@@ -1,5 +1,5 @@
 'use client'
-import { useState, useTransition, useEffect } from 'react'
+import { useState, useTransition, useEffect, useReducer } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -51,15 +51,46 @@ function getPartnerName(union: PersonUnion, anchorPersonId: string, fallback: st
   return [partner.firstName, partner.lastName].filter(Boolean).join(' ') || fallback
 }
 
+type PartnerFetch =
+  | { phase: 'idle' }
+  | { phase: 'loading' }
+  | { phase: 'done'; unions: PersonUnion[]; selectedId: string | null | undefined }
+
+type PartnerAction =
+  | { type: 'start' }
+  | { type: 'success'; unions: PersonUnion[] }
+  | { type: 'error' }
+  | { type: 'reset' }
+  | { type: 'select'; id: string | null }
+
+function partnerReducer(state: PartnerFetch, action: PartnerAction): PartnerFetch {
+  switch (action.type) {
+    case 'start':
+      return { phase: 'loading' }
+    case 'reset':
+      return { phase: 'idle' }
+    case 'error':
+      return { phase: 'done', unions: [], selectedId: null }
+    case 'success': {
+      const selectedId =
+        action.unions.length === 0
+          ? null
+          : action.unions.length === 1
+            ? action.unions[0].id
+            : undefined
+      return { phase: 'done', unions: action.unions, selectedId }
+    }
+    case 'select':
+      return state.phase === 'done' ? { ...state, selectedId: action.id } : state
+  }
+}
+
 export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Props) {
   const t = useTranslations('relativeSidebar')
   const tForm = useTranslations('personForm')
   const [relationship, setRelationship] = useState<RelationshipType>('partner')
   const [pending, startTransition] = useTransition()
-  const [anchorUnions, setAnchorUnions] = useState<PersonUnion[] | null>(null)
-  const [unionsLoading, setUnionsLoading] = useState(false)
-  // undefined = not yet selected, null = "no other parent", string = unionId
-  const [selectedUnionId, setSelectedUnionId] = useState<string | null | undefined>(undefined)
+  const [partnerFetch, dispatchPartner] = useReducer(partnerReducer, { phase: 'idle' })
 
   const {
     register,
@@ -73,30 +104,26 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
 
   useEffect(() => {
     if (relationship !== 'child') {
-      setAnchorUnions(null)
-      setSelectedUnionId(undefined)
+      dispatchPartner({ type: 'reset' })
       return
     }
     let cancelled = false
-    setUnionsLoading(true)
-    setAnchorUnions(null)
-    setSelectedUnionId(undefined)
+    dispatchPartner({ type: 'start' })
     getPersonUnions(treeId, anchorPerson.id).then((result) => {
       if (cancelled) return
       if (result.success && result.data) {
-        setAnchorUnions(result.data)
-        if (result.data.length === 1) setSelectedUnionId(result.data[0].id)
-        if (result.data.length === 0) setSelectedUnionId(null)
+        dispatchPartner({ type: 'success', unions: result.data })
       } else {
-        setSelectedUnionId(null)
+        dispatchPartner({ type: 'error' })
         toast.error(result.success === false ? result.error : 'Failed to load partners')
       }
-      setUnionsLoading(false)
     })
     return () => {
       cancelled = true
     }
   }, [relationship, treeId, anchorPerson.id])
+
+  const selectedUnionId = partnerFetch.phase === 'done' ? partnerFetch.selectedId : undefined
 
   const RELATIONSHIPS: { value: RelationshipType; label: string; icon: React.ReactNode }[] = [
     { value: 'partner', label: t('partner'), icon: <Heart className="w-3.5 h-3.5" /> },
@@ -105,7 +132,8 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
   ]
 
   const submitDisabled =
-    pending || (relationship === 'child' && (unionsLoading || selectedUnionId === undefined))
+    pending ||
+    (relationship === 'child' && (partnerFetch.phase !== 'done' || selectedUnionId === undefined))
 
   function onSubmit(data: PersonInput) {
     startTransition(async () => {
@@ -232,7 +260,7 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
         {relationship === 'child' && (
           <div>
             <span style={labelStyle}>{t('selectPartner')}</span>
-            {unionsLoading ? (
+            {partnerFetch.phase === 'loading' ? (
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
@@ -243,7 +271,7 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
               >
                 {t('partnerLoading')}
               </p>
-            ) : anchorUnions !== null && anchorUnions.length === 0 ? (
+            ) : partnerFetch.phase === 'done' && partnerFetch.unions.length === 0 ? (
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
@@ -255,17 +283,24 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
               >
                 {t('noPartners')}
               </p>
-            ) : anchorUnions !== null && anchorUnions.length === 1 ? (
+            ) : partnerFetch.phase === 'done' && partnerFetch.unions.length === 1 ? (
               <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--ink)' }}>
                 {t('partnerAutoSelected', {
-                  name: getPartnerName(anchorUnions[0], anchorPerson.id, t('unknownPartner')),
+                  name: getPartnerName(
+                    partnerFetch.unions[0],
+                    anchorPerson.id,
+                    t('unknownPartner')
+                  ),
                 })}
               </p>
-            ) : anchorUnions !== null && anchorUnions.length > 1 ? (
+            ) : partnerFetch.phase === 'done' && partnerFetch.unions.length > 1 ? (
               <select
-                value={selectedUnionId ?? ''}
+                value={partnerFetch.selectedId ?? ''}
                 onChange={(e) =>
-                  setSelectedUnionId(e.target.value === '__none__' ? null : e.target.value)
+                  dispatchPartner({
+                    type: 'select',
+                    id: e.target.value === '__none__' ? null : e.target.value,
+                  })
                 }
                 style={{ ...inputStyle, cursor: 'pointer' }}
                 onFocus={(e) => {
@@ -278,7 +313,7 @@ export function RelativeSidebar({ treeId, anchorPerson, onClose, onSuccess }: Pr
                 <option value="" disabled>
                   —
                 </option>
-                {anchorUnions.map((u) => (
+                {partnerFetch.unions.map((u) => (
                   <option key={u.id} value={u.id}>
                     {getPartnerName(u, anchorPerson.id, t('unknownPartner'))}
                   </option>
