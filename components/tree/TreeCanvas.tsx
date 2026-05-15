@@ -134,6 +134,20 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
     setEdges(freshEdges)
   }, [persons, unions, parentage, setNodes, setEdges])
 
+  // Optimistically remove a union node and all its edges
+  const removeUnionOptimistic = useCallback(
+    (unionId: string) => {
+      const nodeId = `union-${unionId}`
+      setNodes((prev) => prev.filter((n) => n.id !== nodeId))
+      setEdges((prev) =>
+        prev.filter(
+          (e) => e.id !== `e-p1-${unionId}` && e.id !== `e-p2-${unionId}` && e.source !== nodeId
+        )
+      )
+    },
+    [setNodes, setEdges]
+  )
+
   // Stable callback passed into node data
   const handleAddRelative = useCallback(
     (personId: string) => {
@@ -173,28 +187,53 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
     [nodes, persons, unions, parentage]
   )
 
-  // Inject callbacks into person node data
-  const nodesWithCallback = nodes.map((n) =>
-    n.type === 'person'
-      ? {
-          ...n,
-          data: { ...n.data, onAddRelative: handleAddRelative, onPersonClick: handlePersonClick },
-        }
-      : n
-  )
-
-  const handleDeleteEdge = useCallback(
-    (edgeId: string) => {
+  const handleDeleteUnion = useCallback(
+    (unionId: string) => {
+      removeUnionOptimistic(unionId)
       startTransition(async () => {
-        if (edgeId.startsWith('e-par-')) {
-          await removeChild(edgeId.replace('e-par-', ''))
-        } else {
-          await deleteUnion(edgeId.replace(/^e-p[12]-/, ''))
-        }
+        await deleteUnion(unionId)
         router.refresh()
       })
     },
-    [router]
+    [router, removeUnionOptimistic]
+  )
+
+  // Inject callbacks into node data
+  const nodesWithCallback = nodes.map((n) => {
+    if (n.type === 'person') {
+      return {
+        ...n,
+        data: { ...n.data, onAddRelative: handleAddRelative, onPersonClick: handlePersonClick },
+      }
+    }
+    if (n.type === 'union') {
+      const unionId = n.id.replace('union-', '')
+      return {
+        ...n,
+        data: { ...n.data, onDelete: () => handleDeleteUnion(unionId) },
+      }
+    }
+    return n
+  })
+
+  const handleDeleteEdge = useCallback(
+    (edgeId: string) => {
+      if (edgeId.startsWith('e-par-')) {
+        setEdges((prev) => prev.filter((e) => e.id !== edgeId))
+        startTransition(async () => {
+          await removeChild(edgeId.replace('e-par-', ''))
+          router.refresh()
+        })
+      } else {
+        const unionId = edgeId.replace(/^e-p[12]-/, '')
+        removeUnionOptimistic(unionId)
+        startTransition(async () => {
+          await deleteUnion(unionId)
+          router.refresh()
+        })
+      }
+    },
+    [router, removeUnionOptimistic, setEdges]
   )
 
   const edgesWithDelete = edges.map((e) => ({
@@ -229,58 +268,149 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
 
       const isSourceUnion = source.startsWith('union-')
       const isTargetUnion = target.startsWith('union-')
+      const CENTER = 72 // (NODE_W - UNION_W) / 2
 
-      startTransition(async () => {
-        if (!isSourceUnion && !isTargetUnion) {
-          const sourceNode = nodes.find((n) => n.id === source)
-          const targetNode = nodes.find((n) => n.id === target)
-          const sX = sourceNode?.position.x ?? 0
-          const tX = targetNode?.position.x ?? 0
-          const sY = sourceNode?.position.y ?? 0
-          const tY = targetNode?.position.y ?? 0
-          const CENTER = 72 // (NODE_W - UNION_W) / 2
+      if (!isSourceUnion && !isTargetUnion) {
+        const sourceNode = nodes.find((n) => n.id === source)
+        const targetNode = nodes.find((n) => n.id === target)
+        const sX = sourceNode?.position.x ?? 0
+        const tX = targetNode?.position.x ?? 0
+        const sY = sourceNode?.position.y ?? 0
+        const tY = targetNode?.position.y ?? 0
 
-          let result: { success: boolean; error?: string } | undefined
-
-          if (sourceHandle === 'left' || sourceHandle === 'right') {
-            const unionX = (sX + tX) / 2 + CENTER
-            const unionY = Math.max(sY, tY) + 120
-            result = await linkPersons(treeId, source, target, { x: unionX, y: unionY })
-          } else if (sourceHandle === 'bottom') {
-            const unionX = sX + CENTER
-            const unionY = sY + 100
-            await addExistingChild(treeId, source, target, { x: unionX, y: unionY })
-          } else if (sourceHandle === 'top') {
-            const unionX = tX + CENTER
-            const unionY = tY + 100
-            await addExistingChild(treeId, target, source, { x: unionX, y: unionY })
-          }
-
-          if (result && !result.success) {
-            toast.error(result.error)
-            return
-          }
-          router.refresh()
-        } else if (isSourceUnion && !isTargetUnion) {
-          const unionId = source.replace('union-', '')
+        if (sourceHandle === 'left' || sourceHandle === 'right') {
+          // Link two persons as partners → new union node
+          const unionX = (sX + tX) / 2 + CENTER
+          const unionY = Math.max(sY, tY) + 120
+          const tempId = crypto.randomUUID()
+          const tempNodeId = `union-${tempId}`
+          setNodes((prev) => [
+            ...prev,
+            {
+              id: tempNodeId,
+              type: 'union',
+              position: { x: unionX - CENTER, y: unionY },
+              data: { id: tempId },
+            },
+          ])
+          setEdges((prev) => [
+            ...prev,
+            {
+              id: `e-p1-${tempId}`,
+              source,
+              sourceHandle: 'bottom',
+              target: tempNodeId,
+              targetHandle: 'p1',
+              type: 'deletable',
+            },
+            {
+              id: `e-p2-${tempId}`,
+              source: target,
+              sourceHandle: 'bottom',
+              target: tempNodeId,
+              targetHandle: 'p2',
+              type: 'deletable',
+            },
+          ])
+          startTransition(async () => {
+            const result = await linkPersons(treeId, source, target, { x: unionX, y: unionY })
+            if (result && !result.success) {
+              toast.error(result.error)
+              setNodes((prev) => prev.filter((n) => n.id !== tempNodeId))
+              setEdges((prev) =>
+                prev.filter((e) => e.id !== `e-p1-${tempId}` && e.id !== `e-p2-${tempId}`)
+              )
+              return
+            }
+            router.refresh()
+          })
+        } else if (sourceHandle === 'bottom' || sourceHandle === 'top') {
+          // Connect parent → child → new single-parent union node
+          const parentId = sourceHandle === 'bottom' ? source : target
+          const childId = sourceHandle === 'bottom' ? target : source
+          const parentNode = nodes.find((n) => n.id === parentId)
+          const pX = parentNode?.position.x ?? 0
+          const pY = parentNode?.position.y ?? 0
+          const unionX = pX + CENTER
+          const unionY = pY + 100
+          const tempId = crypto.randomUUID()
+          const tempNodeId = `union-${tempId}`
+          const tempParId = crypto.randomUUID()
+          setNodes((prev) => [
+            ...prev,
+            {
+              id: tempNodeId,
+              type: 'union',
+              position: { x: unionX - CENTER, y: unionY },
+              data: { id: tempId },
+            },
+          ])
+          setEdges((prev) => [
+            ...prev,
+            {
+              id: `e-p1-${tempId}`,
+              source: parentId,
+              sourceHandle: 'bottom',
+              target: tempNodeId,
+              targetHandle: 'p1',
+              type: 'deletable',
+            },
+            {
+              id: `e-par-${tempParId}`,
+              source: tempNodeId,
+              target: childId,
+              targetHandle: 'top',
+              type: 'deletable',
+            },
+          ])
+          startTransition(async () => {
+            await addExistingChild(treeId, parentId, childId, { x: unionX, y: unionY })
+            router.refresh()
+          })
+        }
+      } else if (isSourceUnion && !isTargetUnion) {
+        // Existing union → child
+        const unionId = source.replace('union-', '')
+        const tempParId = crypto.randomUUID()
+        setEdges((prev) => [
+          ...prev,
+          { id: `e-par-${tempParId}`, source, target, targetHandle: 'top', type: 'deletable' },
+        ])
+        startTransition(async () => {
           const result = await addChild(unionId, target)
           if (!result.success) {
             toast.error(result.error)
+            setEdges((prev) => prev.filter((e) => e.id !== `e-par-${tempParId}`))
             return
           }
           router.refresh()
-        } else if (!isSourceUnion && isTargetUnion) {
-          const unionId = target.replace('union-', '')
+        })
+      } else if (!isSourceUnion && isTargetUnion) {
+        // Person → existing union (child of union)
+        const unionId = target.replace('union-', '')
+        const tempParId = crypto.randomUUID()
+        setEdges((prev) => [
+          ...prev,
+          {
+            id: `e-par-${tempParId}`,
+            source: target,
+            target: source,
+            targetHandle: 'top',
+            type: 'deletable',
+          },
+        ])
+        startTransition(async () => {
           const result = await addChild(unionId, source)
           if (!result.success) {
             toast.error(result.error)
+            setEdges((prev) => prev.filter((e) => e.id !== `e-par-${tempParId}`))
             return
           }
           router.refresh()
-        }
-      })
+        })
+      }
     },
-    [nodes, treeId, router, startTransition]
+    [nodes, treeId, router, startTransition, setNodes, setEdges]
   )
 
   return (
@@ -332,10 +462,13 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
             setPersonKinship(null)
           }}
           onDelete={() => {
+            const personId = personDetail.id
+            setPersonDetail(null)
+            setPersonKinship(null)
+            setNodes((prev) => prev.filter((n) => n.id !== personId))
+            setEdges((prev) => prev.filter((e) => e.source !== personId && e.target !== personId))
             startTransition(async () => {
-              await deletePerson(personDetail.id)
-              setPersonDetail(null)
-              setPersonKinship(null)
+              await deletePerson(personId)
               router.refresh()
             })
           }}
