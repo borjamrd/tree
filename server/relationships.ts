@@ -26,13 +26,41 @@ function sanitizePerson(input: PersonInput) {
   }
 }
 
-const NODE_W  = 160  // PersonNode width (w-40)
-const UNION_W = 16   // UnionNode width (w-4)
-const H_GAP   = 40   // horizontal gap between sibling nodes
-const V_CHILD = 220  // vertical distance person → child
-const V_UNION = 100  // vertical distance person → union node
+const NODE_W = 160 // PersonNode width (w-40)
+const UNION_W = 16 // UnionNode width (w-4)
+const H_GAP = 40 // horizontal gap between sibling nodes
+const V_CHILD = 220 // vertical distance person → child
+const V_UNION = 100 // vertical distance person → union node
 // offset so the union handle (at union center) aligns with the person handle (at person center)
-const CENTER  = (NODE_W - UNION_W) / 2  // 72
+const CENTER = (NODE_W - UNION_W) / 2 // 72
+
+// Returns the X coordinate of the first slot that doesn't collide with any
+// existing person node on the same row as `anchor`. Tries right then left,
+// expanding outward until a free slot is found.
+async function findFreePartnerSlot(
+  treeId: string,
+  anchor: { x: number; y: number }
+): Promise<number> {
+  const allPersons = await db.query.persons.findMany({ where: eq(persons.treeId, treeId) })
+
+  const ROW_TOLERANCE = 80
+  const sameRow = allPersons
+    .filter((p) => Math.abs(Number(p.posY ?? 0) - anchor.y) <= ROW_TOLERANCE)
+    .map((p) => Number(p.posX ?? 0))
+
+  const STEP = NODE_W + H_GAP
+  const isOccupied = (x: number) => sameRow.some((ox) => Math.abs(ox - x) < STEP)
+
+  // Alternate right / left, expanding outward
+  for (let i = 1; i <= 8; i++) {
+    const right = anchor.x + i * STEP
+    if (!isOccupied(right)) return right
+    const left = anchor.x - i * STEP
+    if (!isOccupied(left)) return left
+  }
+
+  return anchor.x + 9 * STEP
+}
 
 async function computePosition(
   treeId: string,
@@ -41,14 +69,13 @@ async function computePosition(
   anchor: { x: number; y: number }
 ): Promise<{ personX: number; personY: number; unionX: number; unionY: number }> {
   if (type === 'partner') {
-    const person2X = anchor.x + NODE_W + H_GAP
-    // union centered between both persons' centers
-    const unionCenterX = anchor.x + NODE_W / 2 + (NODE_W + H_GAP) / 2
+    const person2X = await findFreePartnerSlot(treeId, anchor)
+    const unionCenterX = (anchor.x + NODE_W / 2 + person2X + NODE_W / 2) / 2
     return {
       personX: person2X,
       personY: anchor.y,
-      unionX:  unionCenterX - UNION_W / 2,
-      unionY:  anchor.y + V_UNION,
+      unionX: unionCenterX - UNION_W / 2,
+      unionY: anchor.y + V_UNION,
     }
   }
 
@@ -62,26 +89,26 @@ async function computePosition(
       with: { children: { with: { child: true } } },
     })
 
-    const siblings = parentUnions.flatMap(u => u.children.map(p => p.child))
+    const siblings = parentUnions.flatMap((u) => u.children.map((p) => p.child))
 
     if (siblings.length > 0) {
-      const xs = siblings.map(s => Number(s.posX ?? 0))
-      const ys = siblings.map(s => Number(s.posY ?? 0))
+      const xs = siblings.map((s) => Number(s.posX ?? 0))
+      const ys = siblings.map((s) => Number(s.posY ?? 0))
       const siblingY = Math.round(ys.reduce((a, b) => a + b, 0) / ys.length)
-      const childX   = Math.max(...xs) + NODE_W + H_GAP
+      const childX = Math.max(...xs) + NODE_W + H_GAP
       return {
         personX: childX,
         personY: siblingY,
-        unionX:  childX + CENTER,
-        unionY:  siblingY - V_UNION,
+        unionX: childX + CENTER,
+        unionY: siblingY - V_UNION,
       }
     }
 
     return {
       personX: anchor.x,
       personY: anchor.y + V_CHILD,
-      unionX:  anchor.x + CENTER,
-      unionY:  anchor.y + V_UNION,
+      unionX: anchor.x + CENTER,
+      unionY: anchor.y + V_UNION,
     }
   }
 
@@ -89,8 +116,8 @@ async function computePosition(
   return {
     personX: anchor.x,
     personY: anchor.y - V_CHILD,
-    unionX:  anchor.x + CENTER,
-    unionY:  anchor.y - V_UNION,
+    unionX: anchor.x + CENTER,
+    unionY: anchor.y - V_UNION,
   }
 }
 
@@ -108,12 +135,15 @@ export async function addRelative(
     const parsed = sanitizePerson(personSchema.parse(personData))
     const pos = await computePosition(treeId, anchorPersonId, relationshipType, anchorPosition)
 
-    const [newPerson] = await db.insert(persons).values({
-      ...parsed,
-      treeId,
-      posX: String(pos.personX),
-      posY: String(pos.personY),
-    }).returning()
+    const [newPerson] = await db
+      .insert(persons)
+      .values({
+        ...parsed,
+        treeId,
+        posX: String(pos.personX),
+        posY: String(pos.personY),
+      })
+      .returning()
 
     if (relationshipType === 'partner') {
       await db.insert(unions).values({
@@ -125,25 +155,35 @@ export async function addRelative(
         posY: String(pos.unionY),
       })
     } else if (relationshipType === 'child') {
-      const [union] = await db.insert(unions).values({
-        treeId,
-        person1Id: anchorPersonId,
-        person2Id: null,
-        type: 'unknown',
-        posX: String(pos.unionX),
-        posY: String(pos.unionY),
-      }).returning()
-      await db.insert(parentage).values({ unionId: union.id, childId: newPerson.id, type: 'biological' })
+      const [union] = await db
+        .insert(unions)
+        .values({
+          treeId,
+          person1Id: anchorPersonId,
+          person2Id: null,
+          type: 'unknown',
+          posX: String(pos.unionX),
+          posY: String(pos.unionY),
+        })
+        .returning()
+      await db
+        .insert(parentage)
+        .values({ unionId: union.id, childId: newPerson.id, type: 'biological' })
     } else {
-      const [union] = await db.insert(unions).values({
-        treeId,
-        person1Id: newPerson.id,
-        person2Id: null,
-        type: 'unknown',
-        posX: String(pos.unionX),
-        posY: String(pos.unionY),
-      }).returning()
-      await db.insert(parentage).values({ unionId: union.id, childId: anchorPersonId, type: 'biological' })
+      const [union] = await db
+        .insert(unions)
+        .values({
+          treeId,
+          person1Id: newPerson.id,
+          person2Id: null,
+          type: 'unknown',
+          posX: String(pos.unionX),
+          posY: String(pos.unionY),
+        })
+        .returning()
+      await db
+        .insert(parentage)
+        .values({ unionId: union.id, childId: anchorPersonId, type: 'biological' })
     }
 
     revalidatePath(`/trees/${treeId}`)
@@ -176,12 +216,15 @@ export async function createUnion(
   person2Id: string | null,
   type: 'married' | 'partnered' | 'divorced' | 'separated' | 'unknown' = 'unknown',
   posX = '0',
-  posY = '0',
+  posY = '0'
 ) {
   const user = await requireUser()
   await verifyTreeOwnership(treeId, user.id)
 
-  const [union] = await db.insert(unions).values({ treeId, person1Id, person2Id, type, posX, posY }).returning()
+  const [union] = await db
+    .insert(unions)
+    .values({ treeId, person1Id, person2Id, type, posX, posY })
+    .returning()
   revalidatePath(`/trees/${treeId}`)
   return union
 }
@@ -206,7 +249,10 @@ export async function updateUnion(
 export async function updateUnionPosition(unionId: string, x: number, y: number) {
   const user = await requireUser()
   const union = await verifyUnionOwnership(unionId, user.id)
-  await db.update(unions).set({ posX: String(x), posY: String(y) }).where(eq(unions.id, unionId))
+  await db
+    .update(unions)
+    .set({ posX: String(x), posY: String(y) })
+    .where(eq(unions.id, unionId))
   revalidatePath(`/trees/${union.treeId}`)
 }
 
@@ -259,14 +305,17 @@ export async function addExistingChild(
   const user = await requireUser()
   await verifyTreeOwnership(treeId, user.id)
 
-  const [union] = await db.insert(unions).values({
-    treeId,
-    person1Id: parentId,
-    person2Id: null,
-    type: 'unknown',
-    posX: String(unionPos.x),
-    posY: String(unionPos.y),
-  }).returning()
+  const [union] = await db
+    .insert(unions)
+    .values({
+      treeId,
+      person1Id: parentId,
+      person2Id: null,
+      type: 'unknown',
+      posX: String(unionPos.x),
+      posY: String(unionPos.y),
+    })
+    .returning()
 
   await db.insert(parentage).values({ unionId: union.id, childId, type: 'biological' })
   revalidatePath(`/trees/${treeId}`)
@@ -279,97 +328,104 @@ export async function linkPersons(
   unionPos: { x: number; y: number }
 ): Promise<Result> {
   try {
-  const user = await requireUser()
-  await verifyTreeOwnership(treeId, user.id)
+    const user = await requireUser()
+    await verifyTreeOwnership(treeId, user.id)
 
-  // Load all unions (with their children) for both persons
-  const [unionsA, unionsB] = await Promise.all([
-    db.query.unions.findMany({
-      where: and(
-        eq(unions.treeId, treeId),
-        or(eq(unions.person1Id, personAId), eq(unions.person2Id, personAId))
-      ),
-      with: { children: true },
-    }),
-    db.query.unions.findMany({
-      where: and(
-        eq(unions.treeId, treeId),
-        or(eq(unions.person1Id, personBId), eq(unions.person2Id, personBId))
-      ),
-      with: { children: true },
-    }),
-  ])
+    // Load all unions (with their children) for both persons
+    const [unionsA, unionsB] = await Promise.all([
+      db.query.unions.findMany({
+        where: and(
+          eq(unions.treeId, treeId),
+          or(eq(unions.person1Id, personAId), eq(unions.person2Id, personAId))
+        ),
+        with: { children: true },
+      }),
+      db.query.unions.findMany({
+        where: and(
+          eq(unions.treeId, treeId),
+          or(eq(unions.person1Id, personBId), eq(unions.person2Id, personBId))
+        ),
+        with: { children: true },
+      }),
+    ])
 
-  // Guard: already partners?
-  const alreadyPartners = unionsA.some(u =>
-    (u.person1Id === personAId && u.person2Id === personBId) ||
-    (u.person1Id === personBId && u.person2Id === personAId)
-  )
-  if (alreadyPartners) return { success: false, error: 'Esta pareja ya está vinculada' }
+    // Guard: already partners?
+    const alreadyPartners = unionsA.some(
+      (u) =>
+        (u.person1Id === personAId && u.person2Id === personBId) ||
+        (u.person1Id === personBId && u.person2Id === personAId)
+    )
+    if (alreadyPartners) return { success: false, error: 'Esta pareja ya está vinculada' }
 
-  // Find pairs of unions that share at least one child — merge those only
-  type UnionWithChildren = (typeof unionsA)[number]
-  const merges: Array<{ uA: UnionWithChildren; uB: UnionWithChildren; childIds: string[] }> = []
-  const mergedAIds = new Set<string>()
-  const mergedBIds = new Set<string>()
+    // Find pairs of unions that share at least one child — merge those only
+    type UnionWithChildren = (typeof unionsA)[number]
+    const merges: Array<{ uA: UnionWithChildren; uB: UnionWithChildren; childIds: string[] }> = []
+    const mergedAIds = new Set<string>()
+    const mergedBIds = new Set<string>()
 
-  for (const uA of unionsA) {
-    for (const uB of unionsB) {
-      const setA = new Set(uA.children.map((c) => c.childId))
-      const setB = new Set(uB.children.map((c) => c.childId))
-      const shared = [...setA].filter((id) => setB.has(id))
-      if (shared.length > 0) {
-        // Collect all children from both unions into the merged one
-        const allChildIds = [...new Set([...setA, ...setB])]
-        merges.push({ uA, uB, childIds: allChildIds })
-        mergedAIds.add(uA.id)
-        mergedBIds.add(uB.id)
+    for (const uA of unionsA) {
+      for (const uB of unionsB) {
+        const setA = new Set(uA.children.map((c) => c.childId))
+        const setB = new Set(uB.children.map((c) => c.childId))
+        const shared = [...setA].filter((id) => setB.has(id))
+        if (shared.length > 0) {
+          // Collect all children from both unions into the merged one
+          const allChildIds = [...new Set([...setA, ...setB])]
+          merges.push({ uA, uB, childIds: allChildIds })
+          mergedAIds.add(uA.id)
+          mergedBIds.add(uB.id)
+        }
       }
     }
-  }
 
-  if (merges.length > 0) {
-    for (const { uA, uB, childIds } of merges) {
-      // Create the shared union centered between the two persons
-      const [newUnion] = await db.insert(unions).values({
+    if (merges.length > 0) {
+      for (const { uA, uB, childIds } of merges) {
+        // Create the shared union centered between the two persons
+        const [newUnion] = await db
+          .insert(unions)
+          .values({
+            treeId,
+            person1Id: personAId,
+            person2Id: personBId,
+            type: 'unknown',
+            posX: String(unionPos.x),
+            posY: String(unionPos.y),
+          })
+          .returning()
+
+        // Remove old parentage records from both dissolved unions
+        await db
+          .delete(parentage)
+          .where(
+            and(inArray(parentage.childId, childIds), inArray(parentage.unionId, [uA.id, uB.id]))
+          )
+
+        // Re-attach all children to the new shared union
+        await db.insert(parentage).values(
+          childIds.map((childId) => ({
+            unionId: newUnion.id,
+            childId,
+            type: 'biological' as const,
+          }))
+        )
+
+        // Delete the now-empty single-parent unions
+        await db.delete(unions).where(inArray(unions.id, [uA.id, uB.id]))
+      }
+    } else {
+      // No children in common — just create a partnership union
+      await db.insert(unions).values({
         treeId,
         person1Id: personAId,
         person2Id: personBId,
         type: 'unknown',
         posX: String(unionPos.x),
         posY: String(unionPos.y),
-      }).returning()
-
-      // Remove old parentage records from both dissolved unions
-      await db.delete(parentage).where(
-        and(
-          inArray(parentage.childId, childIds),
-          inArray(parentage.unionId, [uA.id, uB.id])
-        )
-      )
-
-      // Re-attach all children to the new shared union
-      await db.insert(parentage).values(
-        childIds.map((childId) => ({ unionId: newUnion.id, childId, type: 'biological' as const }))
-      )
-
-      // Delete the now-empty single-parent unions
-      await db.delete(unions).where(inArray(unions.id, [uA.id, uB.id]))
+      })
     }
-  } else {
-    // No children in common — just create a partnership union
-    await db.insert(unions).values({
-      treeId,
-      person1Id: personAId,
-      person2Id: personBId,
-      type: 'unknown',
-      posX: String(unionPos.x),
-      posY: String(unionPos.y),
-    })
-  }
 
-  revalidatePath(`/trees/${treeId}`)
-  return { success: true }
+    revalidatePath(`/trees/${treeId}`)
+    return { success: true }
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : 'Error al vincular' }
   }
