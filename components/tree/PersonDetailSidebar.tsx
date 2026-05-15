@@ -1,7 +1,8 @@
 'use client'
 import { Link } from '@/i18n/navigation'
-import { X, ArrowUpRight, UserPlus, Fingerprint } from 'lucide-react'
+import { X, ArrowUpRight, UserPlus, Fingerprint, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useState } from 'react'
 
 export type PersonDetail = {
   id: string
@@ -39,6 +40,7 @@ type Props = {
   onClose: () => void
   onAddRelative: () => void
   onToggleSelf: (isSelf: boolean) => void
+  onDelete: () => void
 }
 
 const labelStyle: React.CSSProperties = {
@@ -59,7 +61,7 @@ const valueStyle: React.CSSProperties = {
 }
 
 function accentColor(gender?: string | null) {
-  if (gender === 'male')   return '#C4A252'
+  if (gender === 'male') return '#C4A252'
   if (gender === 'female') return '#9E7B5A'
   return '#D4C9B5'
 }
@@ -69,10 +71,10 @@ function formatDate(iso?: string | null) {
   const [y, m, d] = iso.split('-')
   if (!y) return iso
   const date = new Date(parseInt(y), parseInt(m) - 1, d ? parseInt(d) : 1)
-  return date.toLocaleDateString(undefined, { 
-    day: d ? 'numeric' : undefined, 
-    month: 'short', 
-    year: 'numeric' 
+  return date.toLocaleDateString(undefined, {
+    day: d ? 'numeric' : undefined,
+    month: 'short',
+    year: 'numeric',
   })
 }
 
@@ -80,8 +82,16 @@ function personName(p: KinshipPerson) {
   return [p.firstName, p.lastName, p.lastName2].filter(Boolean).join(' ')
 }
 
-export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, onToggleSelf }: Props) {
+export function PersonDetailSidebar({
+  person,
+  kinship,
+  onClose,
+  onAddRelative,
+  onToggleSelf,
+  onDelete,
+}: Props) {
   const t = useTranslations('personSidebar')
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
   const accent = accentColor(person.gender)
   const fullName = [person.firstName, person.lastName, person.lastName2].filter(Boolean).join(' ')
   const birthFormatted = formatDate(person.birthDate)
@@ -99,9 +109,9 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
   }
 
   const labels = getKinshipLabels(person.gender)
-  const hasKinship = kinship && (
-    kinship.parents.length > 0 || kinship.partners.length > 0 || kinship.children.length > 0
-  )
+  const hasKinship =
+    kinship &&
+    (kinship.parents.length > 0 || kinship.partners.length > 0 || kinship.children.length > 0)
 
   return (
     <div
@@ -206,7 +216,6 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
-
         {/* Birth */}
         {hasBirth && (
           <div>
@@ -283,7 +292,9 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
                   <span style={labelStyle}>{labels.child}</span>
                   <div className="space-y-1">
                     {kinship!.parents.map((p) => (
-                      <p key={p.id} style={valueStyle}>{personName(p)}</p>
+                      <p key={p.id} style={valueStyle}>
+                        {personName(p)}
+                      </p>
                     ))}
                   </div>
                 </div>
@@ -294,7 +305,9 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
                   <span style={labelStyle}>{t('kinship.partnerOf')}</span>
                   <div className="space-y-1">
                     {kinship!.partners.map((p) => (
-                      <p key={p.id} style={valueStyle}>{personName(p)}</p>
+                      <p key={p.id} style={valueStyle}>
+                        {personName(p)}
+                      </p>
                     ))}
                   </div>
                 </div>
@@ -305,7 +318,9 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
                   <span style={labelStyle}>{labels.parent}</span>
                   <div className="space-y-1">
                     {kinship!.children.map((p) => (
-                      <p key={p.id} style={valueStyle}>{personName(p)}</p>
+                      <p key={p.id} style={valueStyle}>
+                        {personName(p)}
+                      </p>
                     ))}
                   </div>
                 </div>
@@ -385,6 +400,87 @@ export function PersonDetailSidebar({ person, kinship, onClose, onAddRelative, o
           <UserPlus className="w-3.5 h-3.5" />
           {t('addRelative')}
         </button>
+
+        {confirmingDelete ? (
+          <div
+            className="flex items-center gap-2"
+            style={{
+              border: '1px solid #C0392B',
+              padding: '8px 12px',
+              background: 'rgba(192,57,43,0.05)',
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '10px',
+                color: '#C0392B',
+                flex: 1,
+                lineHeight: 1.4,
+              }}
+            >
+              {t('deleteConfirm')}
+            </span>
+            <button
+              onClick={() => setConfirmingDelete(false)}
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '10px',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: 'var(--sepia)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px 4px',
+              }}
+            >
+              {t('deleteCancel')}
+            </button>
+            <button
+              onClick={onDelete}
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '10px',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: '#C0392B',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px 4px',
+                fontWeight: 600,
+              }}
+            >
+              {t('deleteConfirmAction')}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmingDelete(true)}
+            className="w-full flex items-center justify-center gap-2 py-2.5 transition-colors duration-150"
+            style={{
+              border: '1px solid var(--rule)',
+              background: 'transparent',
+              color: 'var(--rule)',
+              fontFamily: 'var(--font-body)',
+              fontSize: '10px',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#C0392B'
+              e.currentTarget.style.color = '#C0392B'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--rule)'
+              e.currentTarget.style.color = 'var(--rule)'
+            }}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {t('deletePerson')}
+          </button>
+        )}
       </div>
     </div>
   )
