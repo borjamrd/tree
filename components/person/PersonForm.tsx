@@ -127,26 +127,28 @@ export function PersonForm({
   } = form
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-16 animate-fade-in">
       {/* Identity Section */}
-      <section className="group/section">
-        <SectionTitle icon={User} title="Identity" />
-        <div className="space-y-6">
+      <section className="relative">
+        <div className="absolute -left-8 top-0 bottom-0 w-px bg-stone-200 hidden md:block" />
+        <SectionTitle icon={User} title="Identification & Identity" />
+
+        <div className="grid grid-cols-1 gap-10">
           <InputWrapper label={t('firstName')} id="firstName" error={errors.firstName?.message}>
             <Input
               id="firstName"
               {...register('firstName')}
-              className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 text-lg font-display placeholder:text-stone-200 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
+              className="bg-transparent border-0 border-b border-stone-200 rounded-none px-0 h-12 text-2xl font-display italic placeholder:text-stone-300 focus-visible:ring-0 focus-visible:border-stone-900 transition-all duration-500"
               placeholder="e.g. Eleanor"
             />
           </InputWrapper>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <InputWrapper label={t('lastName')} id="lastName">
               <Input
                 id="lastName"
                 {...register('lastName')}
-                className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 placeholder:text-stone-200 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
+                className="bg-transparent border-0 border-b border-stone-200 rounded-none px-0 h-10 text-lg font-display placeholder:text-stone-300 focus-visible:ring-0 focus-visible:border-stone-900 transition-all duration-500"
                 placeholder="Primary surname"
               />
             </InputWrapper>
@@ -154,141 +156,141 @@ export function PersonForm({
               <Input
                 id="lastName2"
                 {...register('lastName2')}
-                className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 placeholder:text-stone-200 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
+                className="bg-transparent border-0 border-b border-stone-200 rounded-none px-0 h-10 text-lg font-display placeholder:text-stone-300 focus-visible:ring-0 focus-visible:border-stone-900 transition-all duration-500"
                 placeholder="Secondary surname"
               />
             </InputWrapper>
           </div>
 
-          <InputWrapper label={t('gender')} id="gender">
-            <div className="relative">
-              <select
-                id="gender"
-                {...register('gender')}
-                className="appearance-none w-full bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 text-sm focus:outline-none focus:border-stone-900 transition-all cursor-pointer"
-              >
-                <option value="unknown">{t('genderUnknown')}</option>
-                <option value="male">{t('genderMale')}</option>
-                <option value="female">{t('genderFemale')}</option>
-                <option value="other">{t('genderOther')}</option>
-              </select>
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-stone-300">
-                <Sparkles className="w-3 h-3" />
+          <div className="w-full md:w-1/2">
+            <InputWrapper label={t('gender')} id="gender">
+              <div className="relative">
+                <select
+                  id="gender"
+                  {...register('gender')}
+                  className="appearance-none w-full bg-transparent border-0 border-b border-stone-200 rounded-none px-0 h-10 text-sm font-body focus:outline-none focus:border-stone-900 transition-all duration-500 cursor-pointer"
+                >
+                  <option value="unknown">{t('genderUnknown')}</option>
+                  <option value="male">{t('genderMale')}</option>
+                  <option value="female">{t('genderFemale')}</option>
+                  <option value="other">{t('genderOther')}</option>
+                </select>
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-stone-300">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </div>
               </div>
-            </div>
-          </InputWrapper>
+            </InputWrapper>
+          </div>
         </div>
       </section>
 
       {/* Life Timeline Section */}
-      <section className="group/section">
-        <SectionTitle icon={Calendar} title="Life Timeline" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-          <InputWrapper label={t('birthDate')} id="birthDate">
-            <Input
-              id="birthDate"
-              type="date"
-              {...register('birthDate')}
-              className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
-            />
-          </InputWrapper>
-          <InputWrapper label={t('birthPlace')} id="birthPlace">
-            <div className="relative">
-              <Input
-                id="birthPlace"
-                {...register('birthPlace')}
-                className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 pl-6 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
-                placeholder="City, Country"
-              />
-              <MapPin className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-300" />
-            </div>
-          </InputWrapper>
+      <section className="relative">
+        <div className="absolute -left-8 top-0 bottom-0 w-px bg-stone-200 hidden md:block" />
+        <SectionTitle icon={Calendar} title="Chronology of Life" />
 
-          <InputWrapper label={t('deathDate')} id="deathDate">
-            <Input
-              id="deathDate"
-              type="date"
-              {...register('deathDate')}
-              className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 focus-visible:ring-0 focus-visible:border-stone-900 transition-all opacity-70 focus:opacity-100 transition-opacity"
-            />
-          </InputWrapper>
-          <InputWrapper label={t('deathPlace')} id="deathPlace">
-            <div className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
+          {/* Birth */}
+          <div className="space-y-8 p-6 bg-stone-50/50 rounded-sm border border-stone-100">
+            <h4 className="text-[9px] uppercase tracking-[0.2em] font-bold text-stone-400 mb-2">
+              Arrival
+            </h4>
+            <InputWrapper label={t('birthDate')} id="birthDate">
               <Input
-                id="deathPlace"
-                {...register('deathPlace')}
-                className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 pl-6 focus-visible:ring-0 focus-visible:border-stone-900 transition-all opacity-70 focus:opacity-100 transition-opacity"
-                placeholder="Resting place"
+                id="birthDate"
+                type="date"
+                {...register('birthDate')}
+                className="bg-transparent border-0 border-b border-stone-200 rounded-none px-0 h-10 focus-visible:ring-0 focus-visible:border-stone-900 transition-all duration-500 font-body"
               />
-              <MapPin className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-300" />
-            </div>
-          </InputWrapper>
+            </InputWrapper>
+            <InputWrapper label={t('birthPlace')} id="birthPlace">
+              <div className="relative">
+                <Input
+                  id="birthPlace"
+                  {...register('birthPlace')}
+                  className="bg-transparent border-0 border-b border-stone-200 rounded-none px-0 h-10 pl-7 focus-visible:ring-0 focus-visible:border-stone-900 transition-all duration-500 placeholder:text-stone-300"
+                  placeholder="City, Province, Country"
+                />
+                <MapPin className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300 stroke-[1.5]" />
+              </div>
+            </InputWrapper>
+          </div>
+
+          {/* Death */}
+          <div className="space-y-8 p-6 bg-stone-50/50 rounded-sm border border-stone-100">
+            <h4 className="text-[9px] uppercase tracking-[0.2em] font-bold text-stone-400 mb-2">
+              Departure
+            </h4>
+            <InputWrapper label={t('deathDate')} id="deathDate">
+              <Input
+                id="deathDate"
+                type="date"
+                {...register('deathDate')}
+                className="bg-transparent border-0 border-b border-stone-200 rounded-none px-0 h-10 focus-visible:ring-0 focus-visible:border-stone-900 transition-all duration-500 opacity-60 focus:opacity-100 font-body"
+              />
+            </InputWrapper>
+            <InputWrapper label={t('deathPlace')} id="deathPlace">
+              <div className="relative">
+                <Input
+                  id="deathPlace"
+                  {...register('deathPlace')}
+                  className="bg-transparent border-0 border-b border-stone-200 rounded-none px-0 h-10 pl-7 focus-visible:ring-0 focus-visible:border-stone-900 transition-all duration-500 opacity-60 focus:opacity-100 placeholder:text-stone-300"
+                  placeholder="Final resting place"
+                />
+                <MapPin className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300 stroke-[1.5]" />
+              </div>
+            </InputWrapper>
+          </div>
         </div>
       </section>
 
       {/* Media & Narrative Section */}
-      <section className="group/section">
-        <SectionTitle icon={AlignLeft} title="Media & Narrative" />
-        <div className="space-y-8">
+      <section className="relative">
+        <div className="absolute -left-8 top-0 bottom-0 w-px bg-stone-200 hidden md:block" />
+        <SectionTitle icon={AlignLeft} title="Narrative & Visuals" />
+
+        <div className="space-y-10">
           <InputWrapper label={t('photoUrl')} id="photoUrl" error={errors.photoUrl?.message}>
             <div className="relative">
               <Input
                 id="photoUrl"
                 type="url"
-                placeholder={t('photoUrlPlaceholder')}
+                placeholder="Link to an archival portrait..."
                 {...register('photoUrl')}
-                className="bg-transparent border-0 border-b border-stone-100 rounded-none px-0 h-10 pl-6 focus-visible:ring-0 focus-visible:border-stone-900 transition-all"
+                className="bg-transparent border-0 border-b border-stone-200 rounded-none px-0 h-10 pl-7 focus-visible:ring-0 focus-visible:border-stone-900 transition-all duration-500 placeholder:text-stone-300"
               />
-              <Camera className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-300" />
+              <Camera className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300 stroke-[1.5]" />
             </div>
           </InputWrapper>
 
           <InputWrapper label={t('bio')} id="bio">
-            <Textarea
-              id="bio"
-              rows={4}
-              {...register('bio')}
-              className="bg-stone-50/50 border-0 border-stone-100 rounded-2xl p-4 text-sm focus-visible:ring-2 focus-visible:ring-stone-900/5 transition-all resize-none italic"
-              placeholder="Capture the essence of their story..."
-            />
+            <div className="relative group/bio">
+              <div className="absolute -left-4 top-0 bottom-0 w-[2px] bg-stone-100 group-focus-within/bio:bg-stone-900 transition-colors duration-500" />
+              <Textarea
+                id="bio"
+                rows={6}
+                {...register('bio')}
+                className="bg-transparent border-0 rounded-none p-0 text-lg font-body text-stone-700 leading-relaxed focus-visible:ring-0 transition-all resize-none italic placeholder:text-stone-200"
+                placeholder="Transcribe the essence of their journey through time..."
+              />
+            </div>
           </InputWrapper>
         </div>
       </section>
 
-      <div className="pt-8">
+      <div className="pt-12 border-t border-stone-100 flex justify-end">
         <button
           type="submit"
           disabled={pending}
-          className="w-full flex items-center justify-center gap-2 py-3.5 transition-colors duration-150 disabled:opacity-50"
-          style={{
-            border: '1px solid var(--rule)',
-            background: 'transparent',
-            color: 'var(--sepia)',
-            fontFamily: 'var(--font-body)',
-            fontSize: '11px',
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            fontWeight: 500,
-          }}
-          onMouseEnter={(e) => {
-            if (!pending) {
-              e.currentTarget.style.borderColor = 'var(--ink)'
-              e.currentTarget.style.color = 'var(--ink)'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!pending) {
-              e.currentTarget.style.borderColor = 'var(--rule)'
-              e.currentTarget.style.color = 'var(--sepia)'
-            }
-          }}
+          className="group relative inline-flex items-center gap-4 px-12 py-4 bg-stone-900 text-stone-50 rounded-full text-[11px] uppercase tracking-[0.2em] font-bold hover:bg-stone-800 transition-all duration-300 disabled:opacity-50 overflow-hidden"
         >
           {pending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <>
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{submitLabel}</span>
+              <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+              <Sparkles className="w-4 h-4 relative z-10 group-hover:rotate-12 transition-transform" />
+              <span className="relative z-10">{submitLabel}</span>
             </>
           )}
         </button>
