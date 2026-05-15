@@ -25,7 +25,7 @@ import { RelativeSidebar } from './RelativeSidebar'
 import { PersonDetailSidebar, type PersonDetail, type KinshipData } from './PersonDetailSidebar'
 import { AddPersonSidebar } from './AddPersonSidebar'
 import { treeToFlow } from '@/lib/tree-transform'
-import { updatePersonPosition, setPersonAsSelf, deletePerson } from '@/server/persons'
+import { updatePersonPosition, setPersonAsSelf, deletePerson, updatePerson } from '@/server/persons'
 import {
   linkPersons,
   addExistingChild,
@@ -175,6 +175,15 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
     },
     [router]
   )
+
+  async function handleUpdatePerson(data: Parameters<typeof updatePerson>[1]) {
+    if (!personDetail) return
+    const res = await updatePerson(personDetail.id, data)
+    if (res.success) {
+      setPersonDetail((prev) => (prev ? { ...prev, ...data } : prev))
+      router.refresh()
+    }
+  }
 
   const handlePersonClick = useCallback(
     (personId: string) => {
@@ -450,6 +459,7 @@ export function TreeCanvas({ treeId, persons, unions, parentage }: Props) {
             setPersonDetail(null)
             setPersonKinship(null)
           }}
+          onUpdate={handleUpdatePerson}
           onToggleSelf={(isSelf) => handleToggleSelf(personDetail.id, isSelf)}
           onAddRelative={() => {
             setSidebar({

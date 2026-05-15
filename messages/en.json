@@ -116,6 +116,10 @@
     "deleteCancel": "Cancel",
     "deleteConfirmAction": "Delete",
     "viewProfile": "View full profile",
+    "edit": "Edit",
+    "editCancel": "Cancel",
+    "editSave": "Save changes",
+    "isAliveLabel": "Alive",
     "kinship": {
       "childOf_male": "Son of",
       "childOf_female": "Daughter of",

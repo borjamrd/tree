@@ -1,8 +1,11 @@
 'use client'
 import { Link } from '@/i18n/navigation'
-import { X, ArrowUpRight, UserPlus, Fingerprint, Trash2 } from 'lucide-react'
+import { X, ArrowUpRight, UserPlus, Fingerprint, Trash2, Pencil, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { personSchema, type PersonInput } from '@/lib/validations'
 
 export type PersonDetail = {
   id: string
@@ -41,6 +44,7 @@ type Props = {
   onAddRelative: () => void
   onToggleSelf: (isSelf: boolean) => void
   onDelete: () => void
+  onUpdate: (data: Partial<PersonInput>) => Promise<void>
 }
 
 const labelStyle: React.CSSProperties = {
@@ -57,6 +61,19 @@ const valueStyle: React.CSSProperties = {
   fontFamily: 'var(--font-body)',
   fontSize: '13px',
   color: 'var(--ink)',
+  lineHeight: 1.5,
+}
+
+const fieldInputStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-body)',
+  fontSize: '12px',
+  color: 'var(--ink)',
+  background: 'transparent',
+  border: 'none',
+  borderBottom: '1px solid var(--rule)',
+  outline: 'none',
+  width: '100%',
+  paddingBottom: '2px',
   lineHeight: 1.5,
 }
 
@@ -89,9 +106,39 @@ export function PersonDetailSidebar({
   onAddRelative,
   onToggleSelf,
   onDelete,
+  onUpdate,
 }: Props) {
   const t = useTranslations('personSidebar')
+  const tForm = useTranslations('personForm')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [mode, setMode] = useState<'view' | 'edit'>('view')
+  const [saving, setSaving] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<PersonInput>({
+    resolver: zodResolver(personSchema),
+    defaultValues: {
+      firstName: person.firstName,
+      lastName: person.lastName ?? '',
+      lastName2: person.lastName2 ?? '',
+      gender: (person.gender as PersonInput['gender']) ?? 'unknown',
+      birthDate: person.birthDate ?? '',
+      birthPlace: person.birthPlace ?? '',
+      deathDate: person.deathDate ?? '',
+      deathPlace: person.deathPlace ?? '',
+      isAlive: person.isAlive ?? true,
+      photoUrl: person.photoUrl ?? '',
+      bio: person.bio ?? '',
+    },
+  })
+
+  const isAliveWatched = watch('isAlive')
+
   const accent = accentColor(person.gender)
   const fullName = [person.firstName, person.lastName, person.lastName2].filter(Boolean).join(' ')
   const birthFormatted = formatDate(person.birthDate)
@@ -112,6 +159,37 @@ export function PersonDetailSidebar({
   const hasKinship =
     kinship &&
     (kinship.parents.length > 0 || kinship.partners.length > 0 || kinship.children.length > 0)
+
+  function enterEdit() {
+    reset({
+      firstName: person.firstName,
+      lastName: person.lastName ?? '',
+      lastName2: person.lastName2 ?? '',
+      gender: (person.gender as PersonInput['gender']) ?? 'unknown',
+      birthDate: person.birthDate ?? '',
+      birthPlace: person.birthPlace ?? '',
+      deathDate: person.deathDate ?? '',
+      deathPlace: person.deathPlace ?? '',
+      isAlive: person.isAlive ?? true,
+      photoUrl: person.photoUrl ?? '',
+      bio: person.bio ?? '',
+    })
+    setMode('edit')
+  }
+
+  function cancelEdit() {
+    setMode('view')
+  }
+
+  async function onSubmit(data: PersonInput) {
+    setSaving(true)
+    try {
+      await onUpdate(data)
+      setMode('view')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div
@@ -187,8 +265,20 @@ export function PersonDetailSidebar({
             )}
           </div>
 
-          {/* Actions: view full + close */}
+          {/* Actions: edit + view full + close */}
           <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={mode === 'edit' ? cancelEdit : enterEdit}
+              className="flex items-center justify-center w-7 h-7 rounded-sm transition-opacity hover:opacity-60"
+              title={t('edit')}
+              style={{
+                border: `1px solid ${mode === 'edit' ? 'var(--ink)' : 'var(--rule)'}`,
+                color: mode === 'edit' ? 'var(--ink)' : 'var(--sepia)',
+                background: mode === 'edit' ? 'rgba(28,21,16,0.04)' : 'transparent',
+              }}
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
             <Link
               href={`/trees/${person.treeId}/persons/${person.id}`}
               className="flex items-center justify-center w-7 h-7 rounded-sm transition-colors hover:opacity-60"
@@ -214,40 +304,75 @@ export function PersonDetailSidebar({
         </div>
       </div>
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
-        {/* Birth */}
-        {hasBirth && (
-          <div>
-            <span style={labelStyle}>{t('birth')}</span>
-            <p style={valueStyle}>
-              {[birthFormatted, person.birthPlace].filter(Boolean).join(' · ')}
-            </p>
-          </div>
-        )}
+      {mode === 'edit' ? (
+        /* ── Edit mode ── */
+        <>
+          <form
+            id="person-inline-edit"
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex-1 overflow-y-auto px-5 py-5 space-y-4"
+          >
+            {/* Identity */}
+            <div className="space-y-3">
+              <div>
+                <label style={labelStyle}>{tForm('firstName')}</label>
+                <input
+                  {...register('firstName')}
+                  disabled={saving}
+                  style={fieldInputStyle}
+                  className="focus:border-b-[var(--ink)] transition-colors duration-200"
+                />
+                {errors.firstName && (
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '10px',
+                      color: '#C0392B',
+                      marginTop: 2,
+                    }}
+                  >
+                    {errors.firstName.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label style={labelStyle}>{tForm('lastName')}</label>
+                <input
+                  {...register('lastName')}
+                  disabled={saving}
+                  style={fieldInputStyle}
+                  className="focus:border-b-[var(--ink)] transition-colors duration-200"
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>{tForm('lastName2')}</label>
+                <input
+                  {...register('lastName2')}
+                  disabled={saving}
+                  style={fieldInputStyle}
+                  className="focus:border-b-[var(--ink)] transition-colors duration-200"
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>{tForm('gender')}</label>
+                <select
+                  {...register('gender')}
+                  disabled={saving}
+                  style={{
+                    ...fieldInputStyle,
+                    cursor: 'pointer',
+                    appearance: 'none',
+                  }}
+                >
+                  <option value="unknown">{tForm('genderUnknown')}</option>
+                  <option value="male">{tForm('genderMale')}</option>
+                  <option value="female">{tForm('genderFemale')}</option>
+                  <option value="other">{tForm('genderOther')}</option>
+                </select>
+              </div>
+            </div>
 
-        {/* Death */}
-        {hasDeath && (
-          <div>
-            <span style={labelStyle}>{t('death')}</span>
-            <p style={valueStyle}>
-              {[deathFormatted, person.deathPlace].filter(Boolean).join(' · ')}
-            </p>
-          </div>
-        )}
-
-        {/* Gender */}
-        {person.gender && person.gender !== 'unknown' && (
-          <div>
-            <span style={labelStyle}>{t('gender')}</span>
-            <p style={{ ...valueStyle, textTransform: 'capitalize' }}>{person.gender}</p>
-          </div>
-        )}
-
-        {/* Bio */}
-        {person.bio && (
-          <>
-            {/* Ornamental divider */}
+            {/* Divider */}
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
               <div
@@ -257,231 +382,435 @@ export function PersonDetailSidebar({
               <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
             </div>
 
-            <div>
-              <span style={labelStyle}>{t('biography')}</span>
+            {/* Life events */}
+            <div className="space-y-3">
+              <div>
+                <label style={labelStyle}>{tForm('birthDate')}</label>
+                <input
+                  type="date"
+                  {...register('birthDate')}
+                  disabled={saving}
+                  style={fieldInputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>{tForm('birthPlace')}</label>
+                <input
+                  {...register('birthPlace')}
+                  disabled={saving}
+                  style={fieldInputStyle}
+                  className="focus:border-b-[var(--ink)] transition-colors duration-200"
+                />
+              </div>
+
+              {/* isAlive toggle */}
+              <div className="flex items-center gap-2 py-1">
+                <input
+                  type="checkbox"
+                  id="isAlive"
+                  {...register('isAlive')}
+                  disabled={saving}
+                  className="accent-[var(--sepia)] w-3 h-3 cursor-pointer"
+                />
+                <label
+                  htmlFor="isAlive"
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '9px',
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: 'var(--rule)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t('isAliveLabel')}
+                </label>
+              </div>
+
+              {!isAliveWatched && (
+                <>
+                  <div>
+                    <label style={labelStyle}>{tForm('deathDate')}</label>
+                    <input
+                      type="date"
+                      {...register('deathDate')}
+                      disabled={saving}
+                      style={fieldInputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{tForm('deathPlace')}</label>
+                    <input
+                      {...register('deathPlace')}
+                      disabled={saving}
+                      style={fieldInputStyle}
+                      className="focus:border-b-[var(--ink)] transition-colors duration-200"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
+              <div
+                className="w-1.5 h-1.5 rotate-45"
+                style={{ background: 'var(--rule)', borderRadius: 0.5 }}
+              />
+              <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
+            </div>
+
+            {/* Media & bio */}
+            <div className="space-y-3">
+              <div>
+                <label style={labelStyle}>{tForm('photoUrl')}</label>
+                <input
+                  {...register('photoUrl')}
+                  placeholder={tForm('photoUrlPlaceholder')}
+                  disabled={saving}
+                  style={fieldInputStyle}
+                  className="focus:border-b-[var(--ink)] transition-colors duration-200"
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>{tForm('bio')}</label>
+                <textarea
+                  {...register('bio')}
+                  rows={3}
+                  disabled={saving}
+                  style={{
+                    ...fieldInputStyle,
+                    borderBottom: 'none',
+                    border: '1px solid var(--rule)',
+                    padding: '6px 8px',
+                    resize: 'vertical',
+                    fontSize: '12px',
+                  }}
+                  className="focus:border-[var(--ink)] transition-colors duration-200"
+                />
+              </div>
+            </div>
+          </form>
+
+          {/* Edit footer */}
+          <div className="px-5 py-4 space-y-2" style={{ borderTop: '1px solid var(--rule)' }}>
+            <button
+              type="submit"
+              form="person-inline-edit"
+              disabled={saving}
+              className="w-full flex items-center justify-center gap-2 py-2.5 transition-opacity duration-150 disabled:opacity-50"
+              style={{
+                background: 'var(--ink)',
+                color: 'var(--parchment)',
+                fontFamily: 'var(--font-body)',
+                fontSize: '10px',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                border: 'none',
+              }}
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              {t('editSave')}
+            </button>
+            <button
+              type="button"
+              onClick={cancelEdit}
+              disabled={saving}
+              className="w-full flex items-center justify-center gap-2 py-2.5 transition-colors duration-150"
+              style={{
+                border: '1px solid var(--rule)',
+                background: 'transparent',
+                color: 'var(--sepia)',
+                fontFamily: 'var(--font-body)',
+                fontSize: '10px',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--ink)'
+                e.currentTarget.style.color = 'var(--ink)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--rule)'
+                e.currentTarget.style.color = 'var(--sepia)'
+              }}
+            >
+              {t('editCancel')}
+            </button>
+          </div>
+        </>
+      ) : (
+        /* ── View mode ── */
+        <>
+          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+            {/* Birth */}
+            {hasBirth && (
+              <div>
+                <span style={labelStyle}>{t('birth')}</span>
+                <p style={valueStyle}>
+                  {[birthFormatted, person.birthPlace].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            )}
+
+            {/* Death */}
+            {hasDeath && (
+              <div>
+                <span style={labelStyle}>{t('death')}</span>
+                <p style={valueStyle}>
+                  {[deathFormatted, person.deathPlace].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            )}
+
+            {/* Gender */}
+            {person.gender && person.gender !== 'unknown' && (
+              <div>
+                <span style={labelStyle}>{t('gender')}</span>
+                <p style={{ ...valueStyle, textTransform: 'capitalize' }}>{person.gender}</p>
+              </div>
+            )}
+
+            {/* Bio */}
+            {person.bio && (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
+                  <div
+                    className="w-1.5 h-1.5 rotate-45"
+                    style={{ background: 'var(--rule)', borderRadius: 0.5 }}
+                  />
+                  <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
+                </div>
+
+                <div>
+                  <span style={labelStyle}>{t('biography')}</span>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '13px',
+                      color: 'var(--sepia)',
+                      lineHeight: 1.7,
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    {person.bio}
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* Relationships */}
+            {hasKinship && (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
+                  <div
+                    className="w-1.5 h-1.5 rotate-45"
+                    style={{ background: 'var(--rule)', borderRadius: 0.5 }}
+                  />
+                  <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
+                </div>
+
+                <div className="space-y-4">
+                  {kinship!.parents.length > 0 && (
+                    <div>
+                      <span style={labelStyle}>{labels.child}</span>
+                      <div className="space-y-1">
+                        {kinship!.parents.map((p) => (
+                          <p key={p.id} style={valueStyle}>
+                            {personName(p)}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {kinship!.partners.length > 0 && (
+                    <div>
+                      <span style={labelStyle}>{t('kinship.partnerOf')}</span>
+                      <div className="space-y-1">
+                        {kinship!.partners.map((p) => (
+                          <p key={p.id} style={valueStyle}>
+                            {personName(p)}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {kinship!.children.length > 0 && (
+                    <div>
+                      <span style={labelStyle}>{labels.parent}</span>
+                      <div className="space-y-1">
+                        {kinship!.children.map((p) => (
+                          <p key={p.id} style={valueStyle}>
+                            {personName(p)}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Empty state */}
+            {!hasBirth && !hasDeath && !person.bio && !hasKinship && (
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
-                  fontSize: '13px',
-                  color: 'var(--sepia)',
-                  lineHeight: 1.7,
+                  fontSize: '12px',
+                  color: 'var(--rule)',
                   fontStyle: 'italic',
+                  textAlign: 'center',
+                  paddingTop: 12,
                 }}
               >
-                {person.bio}
+                {t('noDetails')}
               </p>
-            </div>
-          </>
-        )}
-
-        {/* Relationships */}
-        {hasKinship && (
-          <>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
-              <div
-                className="w-1.5 h-1.5 rotate-45"
-                style={{ background: 'var(--rule)', borderRadius: 0.5 }}
-              />
-              <div className="flex-1 h-px" style={{ background: 'var(--rule)' }} />
-            </div>
-
-            <div className="space-y-4">
-              {kinship!.parents.length > 0 && (
-                <div>
-                  <span style={labelStyle}>{labels.child}</span>
-                  <div className="space-y-1">
-                    {kinship!.parents.map((p) => (
-                      <p key={p.id} style={valueStyle}>
-                        {personName(p)}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {kinship!.partners.length > 0 && (
-                <div>
-                  <span style={labelStyle}>{t('kinship.partnerOf')}</span>
-                  <div className="space-y-1">
-                    {kinship!.partners.map((p) => (
-                      <p key={p.id} style={valueStyle}>
-                        {personName(p)}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {kinship!.children.length > 0 && (
-                <div>
-                  <span style={labelStyle}>{labels.parent}</span>
-                  <div className="space-y-1">
-                    {kinship!.children.map((p) => (
-                      <p key={p.id} style={valueStyle}>
-                        {personName(p)}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Empty state */}
-        {!hasBirth && !hasDeath && !person.bio && !hasKinship && (
-          <p
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '12px',
-              color: 'var(--rule)',
-              fontStyle: 'italic',
-              textAlign: 'center',
-              paddingTop: 12,
-            }}
-          >
-            {t('noDetails')}
-          </p>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="px-5 py-4 space-y-2" style={{ borderTop: '1px solid var(--rule)' }}>
-        <button
-          onClick={() => onToggleSelf(!person.isSelf)}
-          className="w-full flex items-center justify-center gap-2 py-2.5 transition-colors duration-150"
-          style={{
-            border: `1px solid ${person.isSelf ? '#6B8F71' : 'var(--rule)'}`,
-            background: person.isSelf ? 'rgba(107,143,113,0.08)' : 'transparent',
-            color: person.isSelf ? '#6B8F71' : 'var(--sepia)',
-            fontFamily: 'var(--font-body)',
-            fontSize: '10px',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-          }}
-          onMouseEnter={(e) => {
-            if (!person.isSelf) {
-              e.currentTarget.style.borderColor = 'var(--ink)'
-              e.currentTarget.style.color = 'var(--ink)'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!person.isSelf) {
-              e.currentTarget.style.borderColor = 'var(--rule)'
-              e.currentTarget.style.color = 'var(--sepia)'
-            }
-          }}
-        >
-          <Fingerprint className="w-3.5 h-3.5" />
-          {person.isSelf ? t('isSelf') : t('markAsSelf')}
-        </button>
-        <button
-          onClick={onAddRelative}
-          className="w-full flex items-center justify-center gap-2 py-2.5 transition-colors duration-150"
-          style={{
-            border: '1px solid var(--rule)',
-            background: 'transparent',
-            color: 'var(--sepia)',
-            fontFamily: 'var(--font-body)',
-            fontSize: '10px',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--ink)'
-            e.currentTarget.style.color = 'var(--ink)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--rule)'
-            e.currentTarget.style.color = 'var(--sepia)'
-          }}
-        >
-          <UserPlus className="w-3.5 h-3.5" />
-          {t('addRelative')}
-        </button>
-
-        {confirmingDelete ? (
-          <div
-            className="flex items-center gap-2"
-            style={{
-              border: '1px solid #C0392B',
-              padding: '8px 12px',
-              background: 'rgba(192,57,43,0.05)',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: '10px',
-                color: '#C0392B',
-                flex: 1,
-                lineHeight: 1.4,
-              }}
-            >
-              {t('deleteConfirm')}
-            </span>
-            <button
-              onClick={() => setConfirmingDelete(false)}
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: '10px',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: 'var(--sepia)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '2px 4px',
-              }}
-            >
-              {t('deleteCancel')}
-            </button>
-            <button
-              onClick={onDelete}
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: '10px',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: '#C0392B',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '2px 4px',
-                fontWeight: 600,
-              }}
-            >
-              {t('deleteConfirmAction')}
-            </button>
+            )}
           </div>
-        ) : (
-          <button
-            onClick={() => setConfirmingDelete(true)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 transition-colors duration-150"
-            style={{
-              border: '1px solid var(--rule)',
-              background: 'transparent',
-              color: 'var(--sepia)',
-              fontFamily: 'var(--font-body)',
-              fontSize: '10px',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--ink)'
-              e.currentTarget.style.color = 'var(--ink)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--rule)'
-              e.currentTarget.style.color = 'var(--sepia)'
-            }}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            {t('deletePerson')}
-          </button>
-        )}
-      </div>
+
+          {/* View footer */}
+          <div className="px-5 py-4 space-y-2" style={{ borderTop: '1px solid var(--rule)' }}>
+            <button
+              onClick={() => onToggleSelf(!person.isSelf)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 transition-colors duration-150"
+              style={{
+                border: `1px solid ${person.isSelf ? '#6B8F71' : 'var(--rule)'}`,
+                background: person.isSelf ? 'rgba(107,143,113,0.08)' : 'transparent',
+                color: person.isSelf ? '#6B8F71' : 'var(--sepia)',
+                fontFamily: 'var(--font-body)',
+                fontSize: '10px',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+              }}
+              onMouseEnter={(e) => {
+                if (!person.isSelf) {
+                  e.currentTarget.style.borderColor = 'var(--ink)'
+                  e.currentTarget.style.color = 'var(--ink)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!person.isSelf) {
+                  e.currentTarget.style.borderColor = 'var(--rule)'
+                  e.currentTarget.style.color = 'var(--sepia)'
+                }
+              }}
+            >
+              <Fingerprint className="w-3.5 h-3.5" />
+              {person.isSelf ? t('isSelf') : t('markAsSelf')}
+            </button>
+            <button
+              onClick={onAddRelative}
+              className="w-full flex items-center justify-center gap-2 py-2.5 transition-colors duration-150"
+              style={{
+                border: '1px solid var(--rule)',
+                background: 'transparent',
+                color: 'var(--sepia)',
+                fontFamily: 'var(--font-body)',
+                fontSize: '10px',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--ink)'
+                e.currentTarget.style.color = 'var(--ink)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--rule)'
+                e.currentTarget.style.color = 'var(--sepia)'
+              }}
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              {t('addRelative')}
+            </button>
+
+            {confirmingDelete ? (
+              <div
+                className="flex items-center gap-2"
+                style={{
+                  border: '1px solid #C0392B',
+                  padding: '8px 12px',
+                  background: 'rgba(192,57,43,0.05)',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '10px',
+                    color: '#C0392B',
+                    flex: 1,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {t('deleteConfirm')}
+                </span>
+                <button
+                  onClick={() => setConfirmingDelete(false)}
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '10px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--sepia)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                  }}
+                >
+                  {t('deleteCancel')}
+                </button>
+                <button
+                  onClick={onDelete}
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '10px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: '#C0392B',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                    fontWeight: 600,
+                  }}
+                >
+                  {t('deleteConfirmAction')}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmingDelete(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 transition-colors duration-150"
+                style={{
+                  border: '1px solid var(--rule)',
+                  background: 'transparent',
+                  color: 'var(--sepia)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '10px',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--ink)'
+                  e.currentTarget.style.color = 'var(--ink)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--rule)'
+                  e.currentTarget.style.color = 'var(--sepia)'
+                }}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {t('deletePerson')}
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
