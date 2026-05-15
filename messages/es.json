@@ -111,6 +111,10 @@
     "isSelf": "Soy yo",
     "markAsSelf": "Marcar como yo",
     "addRelative": "Añadir familiar",
+    "deletePerson": "Eliminar persona",
+    "deleteConfirm": "¿Seguro? Esta acción no se puede deshacer.",
+    "deleteCancel": "Cancelar",
+    "deleteConfirmAction": "Eliminar",
     "viewProfile": "Ver perfil completo",
     "kinship": {
       "childOf_male": "Hijo de",

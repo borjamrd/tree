@@ -111,6 +111,10 @@
     "isSelf": "That's me",
     "markAsSelf": "Mark as me",
     "addRelative": "Add relative",
+    "deletePerson": "Delete person",
+    "deleteConfirm": "Are you sure? This cannot be undone.",
+    "deleteCancel": "Cancel",
+    "deleteConfirmAction": "Delete",
     "viewProfile": "View full profile",
     "kinship": {
       "childOf_male": "Son of",
