@@ -462,19 +462,19 @@ export function PersonDetailSidebar({
             style={{
               border: '1px solid var(--rule)',
               background: 'transparent',
-              color: 'var(--rule)',
+              color: 'var(--sepia)',
               fontFamily: 'var(--font-body)',
               fontSize: '10px',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#C0392B'
-              e.currentTarget.style.color = '#C0392B'
+              e.currentTarget.style.borderColor = 'var(--ink)'
+              e.currentTarget.style.color = 'var(--ink)'
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.borderColor = 'var(--rule)'
-              e.currentTarget.style.color = 'var(--rule)'
+              e.currentTarget.style.color = 'var(--sepia)'
             }}
           >
             <Trash2 className="w-3.5 h-3.5" />
