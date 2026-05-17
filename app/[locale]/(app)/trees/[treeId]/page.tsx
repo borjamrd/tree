@@ -1,23 +1,29 @@
 import { getTreePersons } from '@/server/persons'
 import { getTreeRelationships } from '@/server/relationships'
 import { getTree } from '@/server/trees'
+import { requireUser } from '@/lib/get-session'
 import { TreeCanvas } from '@/components/tree/TreeCanvas'
+import { Link } from '@/i18n/navigation'
 import { notFound } from 'next/navigation'
+import { Settings } from 'lucide-react'
 
 export default async function TreePage({ params }: { params: Promise<{ treeId: string }> }) {
   const { treeId } = await params
 
-  const [tree, persons, { unions, parentage }] = await Promise.all([
+  const [tree, persons, { unions, parentage }, user] = await Promise.all([
     getTree(treeId),
     getTreePersons(treeId),
     getTreeRelationships(treeId),
+    requireUser(),
   ])
 
   if (!tree) notFound()
 
+  const isAdmin = tree.userId === user.id
+
   return (
     <div className="h-screen w-full flex flex-col bg-[#fdfcfb]">
-      <header 
+      <header
         className="flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md shrink-0 z-20"
         style={{ borderBottom: '1px solid var(--rule)' }}
       >
@@ -29,6 +35,15 @@ export default async function TreePage({ params }: { params: Promise<{ treeId: s
             {tree.name}
           </h1>
         </div>
+        {isAdmin && (
+          <Link
+            href={`/trees/${treeId}/settings`}
+            className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-sepia/50 hover:text-sepia transition-colors duration-200"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            Settings
+          </Link>
+        )}
       </header>
 
       <div className="flex-1 relative">

@@ -1,10 +1,11 @@
 'use server'
 import { requireUser } from '@/lib/get-session'
 import { db } from '@/lib/db'
-import { unions, parentage, trees, persons } from '@/lib/db/schema'
+import { unions, parentage, persons } from '@/lib/db/schema'
 import { eq, and, or, inArray } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { personSchema, type PersonInput } from '@/lib/validations'
+import { requireTreeAccess } from '@/lib/tree-access'
 
 type RelationshipType = 'partner' | 'child' | 'parent'
 type Result<T = void> = { success: true; data?: T } | { success: false; error: string }
@@ -130,7 +131,7 @@ export async function addRelative(
 ): Promise<Result<{ personId: string }>> {
   try {
     const user = await requireUser()
-    await verifyTreeOwnership(treeId, user.id)
+    await requireTreeAccess(treeId, user.id)
 
     const parsed = sanitizePerson(personSchema.parse(personData))
     const pos = await computePosition(treeId, anchorPersonId, relationshipType, anchorPosition)
@@ -142,6 +143,7 @@ export async function addRelative(
         treeId,
         posX: String(pos.personX),
         posY: String(pos.personY),
+        createdBy: user.id,
       })
       .returning()
 
@@ -153,6 +155,7 @@ export async function addRelative(
         type: 'unknown',
         posX: String(pos.unionX),
         posY: String(pos.unionY),
+        createdBy: user.id,
       })
     } else if (relationshipType === 'child') {
       const [union] = await db
@@ -164,11 +167,17 @@ export async function addRelative(
           type: 'unknown',
           posX: String(pos.unionX),
           posY: String(pos.unionY),
+          createdBy: user.id,
         })
         .returning()
       await db
         .insert(parentage)
-        .values({ unionId: union.id, childId: newPerson.id, type: 'biological' })
+        .values({
+          unionId: union.id,
+          childId: newPerson.id,
+          type: 'biological',
+          createdBy: user.id,
+        })
     } else {
       const [union] = await db
         .insert(unions)
@@ -179,11 +188,17 @@ export async function addRelative(
           type: 'unknown',
           posX: String(pos.unionX),
           posY: String(pos.unionY),
+          createdBy: user.id,
         })
         .returning()
       await db
         .insert(parentage)
-        .values({ unionId: union.id, childId: anchorPersonId, type: 'biological' })
+        .values({
+          unionId: union.id,
+          childId: anchorPersonId,
+          type: 'biological',
+          createdBy: user.id,
+        })
     }
 
     revalidatePath(`/trees/${treeId}`)
@@ -193,20 +208,12 @@ export async function addRelative(
   }
 }
 
-async function verifyTreeOwnership(treeId: string, userId: string) {
-  const tree = await db.query.trees.findFirst({
-    where: and(eq(trees.id, treeId), eq(trees.userId, userId)),
-  })
-  if (!tree) throw new Error('Tree not found')
-  return tree
-}
-
-async function verifyUnionOwnership(unionId: string, userId: string) {
+async function getUnionWithAccess(unionId: string, userId: string) {
   const union = await db.query.unions.findFirst({
     where: eq(unions.id, unionId),
-    with: { tree: true },
   })
-  if (!union || union.tree.userId !== userId) throw new Error('Union not found')
+  if (!union) throw new Error('Union not found')
+  await requireTreeAccess(union.treeId, userId)
   return union
 }
 
@@ -219,11 +226,11 @@ export async function createUnion(
   posY = '0'
 ) {
   const user = await requireUser()
-  await verifyTreeOwnership(treeId, user.id)
+  await requireTreeAccess(treeId, user.id)
 
   const [union] = await db
     .insert(unions)
-    .values({ treeId, person1Id, person2Id, type, posX, posY })
+    .values({ treeId, person1Id, person2Id, type, posX, posY, createdBy: user.id })
     .returning()
   revalidatePath(`/trees/${treeId}`)
   return union
@@ -241,14 +248,14 @@ export async function updateUnion(
   }>
 ) {
   const user = await requireUser()
-  const union = await verifyUnionOwnership(unionId, user.id)
+  const union = await getUnionWithAccess(unionId, user.id)
   await db.update(unions).set(data).where(eq(unions.id, unionId))
   revalidatePath(`/trees/${union.treeId}`)
 }
 
 export async function updateUnionPosition(unionId: string, x: number, y: number) {
   const user = await requireUser()
-  const union = await verifyUnionOwnership(unionId, user.id)
+  const union = await getUnionWithAccess(unionId, user.id)
   await db
     .update(unions)
     .set({ posX: String(x), posY: String(y) })
@@ -258,7 +265,7 @@ export async function updateUnionPosition(unionId: string, x: number, y: number)
 
 export async function deleteUnion(unionId: string) {
   const user = await requireUser()
-  const union = await verifyUnionOwnership(unionId, user.id)
+  const union = await getUnionWithAccess(unionId, user.id)
   await db.delete(unions).where(eq(unions.id, unionId))
   revalidatePath(`/trees/${union.treeId}`)
 }
@@ -270,7 +277,7 @@ export async function addChild(
 ): Promise<Result> {
   try {
     const user = await requireUser()
-    const union = await verifyUnionOwnership(unionId, user.id)
+    const union = await getUnionWithAccess(unionId, user.id)
 
     const existing = await db.query.parentage.findFirst({
       where: and(eq(parentage.unionId, unionId), eq(parentage.childId, childId)),
@@ -303,7 +310,7 @@ export async function addExistingChild(
   unionPos: { x: number; y: number }
 ) {
   const user = await requireUser()
-  await verifyTreeOwnership(treeId, user.id)
+  await requireTreeAccess(treeId, user.id)
 
   const [union] = await db
     .insert(unions)
@@ -314,10 +321,13 @@ export async function addExistingChild(
       type: 'unknown',
       posX: String(unionPos.x),
       posY: String(unionPos.y),
+      createdBy: user.id,
     })
     .returning()
 
-  await db.insert(parentage).values({ unionId: union.id, childId, type: 'biological' })
+  await db
+    .insert(parentage)
+    .values({ unionId: union.id, childId, type: 'biological', createdBy: user.id })
   revalidatePath(`/trees/${treeId}`)
 }
 
@@ -329,7 +339,7 @@ export async function linkPersons(
 ): Promise<Result> {
   try {
     const user = await requireUser()
-    await verifyTreeOwnership(treeId, user.id)
+    await requireTreeAccess(treeId, user.id)
 
     // Load all unions (with their children) for both persons
     const [unionsA, unionsB] = await Promise.all([
@@ -390,6 +400,7 @@ export async function linkPersons(
             type: 'unknown',
             posX: String(unionPos.x),
             posY: String(unionPos.y),
+            createdBy: user.id,
           })
           .returning()
 
@@ -406,6 +417,7 @@ export async function linkPersons(
             unionId: newUnion.id,
             childId,
             type: 'biological' as const,
+            createdBy: user.id,
           }))
         )
 
@@ -421,6 +433,7 @@ export async function linkPersons(
         type: 'unknown',
         posX: String(unionPos.x),
         posY: String(unionPos.y),
+        createdBy: user.id,
       })
     }
 
@@ -440,7 +453,7 @@ export async function addChildToUnion(
 ): Promise<Result<{ personId: string; unionId: string }>> {
   try {
     const user = await requireUser()
-    await verifyTreeOwnership(treeId, user.id)
+    await requireTreeAccess(treeId, user.id)
 
     if (unionId) {
       const existing = await db.query.unions.findFirst({
@@ -454,7 +467,13 @@ export async function addChildToUnion(
 
     const [newPerson] = await db
       .insert(persons)
-      .values({ ...parsed, treeId, posX: String(pos.personX), posY: String(pos.personY) })
+      .values({
+        ...parsed,
+        treeId,
+        posX: String(pos.personX),
+        posY: String(pos.personY),
+        createdBy: user.id,
+      })
       .returning()
 
     let targetUnionId: string
@@ -470,6 +489,7 @@ export async function addChildToUnion(
           type: 'unknown',
           posX: String(pos.unionX),
           posY: String(pos.unionY),
+          createdBy: user.id,
         })
         .returning()
       targetUnionId = newUnion.id
@@ -477,7 +497,12 @@ export async function addChildToUnion(
 
     await db
       .insert(parentage)
-      .values({ unionId: targetUnionId, childId: newPerson.id, type: 'biological' })
+      .values({
+        unionId: targetUnionId,
+        childId: newPerson.id,
+        type: 'biological',
+        createdBy: user.id,
+      })
 
     revalidatePath(`/trees/${treeId}`)
     return { success: true, data: { personId: newPerson.id, unionId: targetUnionId } }
@@ -488,7 +513,7 @@ export async function addChildToUnion(
 
 export async function getTreeRelationships(treeId: string) {
   const user = await requireUser()
-  await verifyTreeOwnership(treeId, user.id)
+  await requireTreeAccess(treeId, user.id)
 
   const [treeUnions, treeParentage] = await Promise.all([
     db.query.unions.findMany({ where: eq(unions.treeId, treeId) }),

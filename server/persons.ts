@@ -1,10 +1,11 @@
 'use server'
 import { requireUser } from '@/lib/get-session'
 import { db } from '@/lib/db'
-import { persons, trees, unions } from '@/lib/db/schema'
+import { persons, unions } from '@/lib/db/schema'
 import { eq, and, or } from 'drizzle-orm'
 import { personSchema, type PersonInput } from '@/lib/validations'
 import { revalidatePath } from 'next/cache'
+import { requireTreeAccess } from '@/lib/tree-access'
 
 export type PersonUnion = {
   id: string
@@ -34,20 +35,12 @@ function sanitize(input: PersonInput) {
   }
 }
 
-async function verifyTreeOwnership(treeId: string, userId: string) {
-  const tree = await db.query.trees.findFirst({
-    where: and(eq(trees.id, treeId), eq(trees.userId, userId)),
-  })
-  if (!tree) throw new Error('Tree not found')
-  return tree
-}
-
-async function verifyPersonOwnership(personId: string, userId: string) {
+async function getPersonWithAccess(personId: string, userId: string) {
   const person = await db.query.persons.findFirst({
     where: eq(persons.id, personId),
-    with: { tree: true },
   })
-  if (!person || person.tree.userId !== userId) throw new Error('Person not found')
+  if (!person) throw new Error('Person not found')
+  await requireTreeAccess(person.treeId, userId)
   return person
 }
 
@@ -57,11 +50,11 @@ export async function createPerson(
 ): Promise<Result<typeof persons.$inferSelect>> {
   try {
     const user = await requireUser()
-    await verifyTreeOwnership(treeId, user.id)
+    await requireTreeAccess(treeId, user.id)
     const data = sanitize(personSchema.parse(input))
     const [person] = await db
       .insert(persons)
-      .values({ ...data, treeId })
+      .values({ ...data, treeId, createdBy: user.id })
       .returning()
     revalidatePath(`/trees/${treeId}`)
     return { success: true, data: person }
@@ -73,7 +66,7 @@ export async function createPerson(
 export async function updatePerson(personId: string, input: Partial<PersonInput>): Promise<Result> {
   try {
     const user = await requireUser()
-    const person = await verifyPersonOwnership(personId, user.id)
+    const person = await getPersonWithAccess(personId, user.id)
     await db
       .update(persons)
       .set(sanitize(input as PersonInput))
@@ -89,7 +82,7 @@ export async function updatePerson(personId: string, input: Partial<PersonInput>
 export async function deletePerson(personId: string): Promise<Result> {
   try {
     const user = await requireUser()
-    const person = await verifyPersonOwnership(personId, user.id)
+    const person = await getPersonWithAccess(personId, user.id)
 
     // Before deleting, fix unions where this person appears so children aren't orphaned:
     // - As person1: if person2 exists, promote person2 → person1 (union survives).
@@ -127,7 +120,7 @@ export async function deletePerson(personId: string): Promise<Result> {
 export async function updatePersonPosition(personId: string, x: number, y: number) {
   try {
     const user = await requireUser()
-    await verifyPersonOwnership(personId, user.id)
+    await getPersonWithAccess(personId, user.id)
     await db
       .update(persons)
       .set({ posX: String(x), posY: String(y) })
@@ -138,7 +131,7 @@ export async function updatePersonPosition(personId: string, x: number, y: numbe
 export async function setPersonAsSelf(personId: string, isSelf: boolean): Promise<Result> {
   try {
     const user = await requireUser()
-    const person = await verifyPersonOwnership(personId, user.id)
+    const person = await getPersonWithAccess(personId, user.id)
     const treeId = person.treeId
     await db.update(persons).set({ isSelf: false }).where(eq(persons.treeId, treeId))
     if (isSelf) {
@@ -153,7 +146,7 @@ export async function setPersonAsSelf(personId: string, isSelf: boolean): Promis
 
 export async function getTreePersons(treeId: string) {
   const user = await requireUser()
-  await verifyTreeOwnership(treeId, user.id)
+  await requireTreeAccess(treeId, user.id)
   return db.query.persons.findMany({ where: eq(persons.treeId, treeId) })
 }
 
@@ -163,7 +156,7 @@ export async function getPersonUnions(
 ): Promise<Result<PersonUnion[]>> {
   try {
     const user = await requireUser()
-    await verifyTreeOwnership(treeId, user.id)
+    await requireTreeAccess(treeId, user.id)
     const result = await db.query.unions.findMany({
       where: and(
         eq(unions.treeId, treeId),
