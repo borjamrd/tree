@@ -24,7 +24,7 @@ function accentColor(gender?: string | null) {
   return '#D4C9B5' // rule
 }
 
-const handleCls = (color: string) =>
+const handleCls = (_color: string) =>
   `!transition-opacity !border-[var(--parchment)] !w-2 !h-2 !opacity-0 group-hover:!opacity-80`
 
 export function PersonNode({ data }: NodeProps) {

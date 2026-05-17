@@ -218,7 +218,7 @@ export default async function PersonDetailPage({
                 </div>
                 <div className="pt-4 border-t border-stone-800">
                   <p className="text-[9px] leading-relaxed italic">
-                    "Every ancestor is a root that feeds the branches of our future."
+                    &ldquo;Every ancestor is a root that feeds the branches of our future.&rdquo;
                   </p>
                 </div>
               </div>

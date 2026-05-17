@@ -18,7 +18,7 @@ type Person = {
   photoUrl?: string | null
 }
 
-function formatDate(dateStr: string | null | undefined) {
+function _formatDate(dateStr: string | null | undefined) {
   if (!dateStr) return null
   return new Date(dateStr).toLocaleDateString(undefined, {
     day: 'numeric',
@@ -111,7 +111,7 @@ export function PersonCard({ person }: { person: Person }) {
           {person.bio && (
             <div className="mt-auto pt-6">
               <p className="text-[11px] text-stone-500 leading-relaxed italic text-center line-clamp-3 px-2">
-                "{person.bio}"
+                &ldquo;{person.bio}&rdquo;
               </p>
             </div>
           )}
